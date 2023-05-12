@@ -35,9 +35,9 @@ type OneIndentedField struct {
 	Symbol         string         `json:"symbol,omitempty"`
 	Name           string         `json:"name,omitempty"`
 	Description    string         `json:"description,omitempty"`
-	Strength       int         `json:"strength,omitempty"`
-	Capacity       int         `json:"capacity,omitempty"`
-	Current        int         `json:"current,omitempty"`
+	Strength       int            `json:"strength,omitempty"`
+	Capacity       int            `json:"capacity,omitempty"`
+	Current        int            `json:"current,omitempty"`
 	Speed          int            `json:"speed,omitempty"`
 	Condition      int            `json:"condition,omitempty"`
 	PowerOutput    int            `json:"powerOutput,omitempty"`
