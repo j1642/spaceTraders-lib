@@ -40,8 +40,8 @@ func main() {
 	//viewContract() // Aluminum ore
 	//fmt.Println(describeShip(miningShip2).Ship.Fuel)
 	//viewShipsForSale("X1-DF55")
-	viewAgent() // 38k credits
-	//gather()
+	//viewAgent() // 38k credits
+	gather()
 	//deliverAlum(miningShips[1])
 	//listMyShips()
 	//dockShip(miningShips[2])
@@ -147,11 +147,11 @@ func sellCargoBesidesAl(ship string) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix != "ALUM" { //&& prefix != "IRON" && prefix != "COPP" {
+		if prefix != "ALUM" && prefix != "ANTI" { //&& prefix != "IRON" && prefix != "COPP" {
 			fmt.Println(ship, "selling", item.Symbol)
 			sellCargo(ship, item.Symbol, item.Units)
-			time.Sleep(1 * time.Second)
 		}
+        time.Sleep(1 * time.Second)
 	}
 	log.Println("exiting sellCargoBesidesAl()")
 }
@@ -212,8 +212,8 @@ func extractOre(ship string, repeat int) {
 	req := makeRequest("POST", url, nil)
 	for i := 0; i < repeat; i++ {
 		cargo := describeShip(ship).Ship.Cargo
-		if cargo.Units == cargo.Capacity {
-			fmt.Println("cargo full")
+		if cargo.Units > cargo.Capacity-2 {
+			fmt.Println("cargo full(ish)")
 			break
 		}
 		sendRequest(req)
