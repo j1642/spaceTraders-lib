@@ -79,9 +79,13 @@ func viewShipsForSale(system string) {
 func collectAndDeliverAl(ship string, wg *sync.WaitGroup) {
 	for i := 0; i < 100; i++ {
 		extractOre(ship, 7)
+		time.Sleep(250 * time.Millisecond)
 		dockShip(ship)
+		time.Sleep(250 * time.Millisecond)
 		sellCargoBesidesAl(ship)
+		time.Sleep(250 * time.Millisecond)
 		orbitLocation(ship)
+		time.Sleep(250 * time.Millisecond)
 		cargo := describeShip(ship).Ship.Cargo
 		if float64(cargo.Units)/float64(cargo.Capacity) > 0.9 {
 			dropOffAlAndReturn(ship)
@@ -133,10 +137,10 @@ func dropOffAlAndReturn(ship string) {
 	deliverAlum(ship)
 
 	// Return to mining location.
-	//orbitLocation(ship)
-	//travelTo(ship, asteroidField)
-	//fmt.Println(ship, "returning from the drop-off")
-	fmt.Println(ship, "standing by at the drop-off")
+	orbitLocation(ship)
+	travelTo(ship, asteroidField)
+	fmt.Println(ship, "returning from the drop-off")
+	//fmt.Println(ship, "standing by at the drop-off")
 	time.Sleep(130 * time.Second)
 }
 
@@ -148,11 +152,12 @@ func sellCargoBesidesAl(ship string) {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
 		if prefix != "ALUM" && prefix != "ANTI" { //&& prefix != "IRON" && prefix != "COPP" {
-			fmt.Println(ship, "selling", item.Symbol)
 			sellCargo(ship, item.Symbol, item.Units)
+			fmt.Println(ship, "selling", item.Symbol)
 		}
-        time.Sleep(1 * time.Second)
+		time.Sleep(1 * time.Second)
 	}
+	time.Sleep(100 * time.Millisecond)
 	log.Println("exiting sellCargoBesidesAl()")
 }
 
@@ -212,7 +217,7 @@ func extractOre(ship string, repeat int) {
 	req := makeRequest("POST", url, nil)
 	for i := 0; i < repeat; i++ {
 		cargo := describeShip(ship).Ship.Cargo
-		if cargo.Units > cargo.Capacity-2 {
+		if cargo.Units > cargo.Capacity-4 {
 			fmt.Println("cargo full(ish)")
 			break
 		}
@@ -230,7 +235,7 @@ func orbitLocation(ship string) {
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("POST", url, nil)
 	sendRequest(req)
-	fmt.Println("Orbiting...")
+	fmt.Println(ship, "orbiting...")
 }
 
 func refuelShip(ship string) {
@@ -240,7 +245,8 @@ func refuelShip(ship string) {
 	req := makeRequest("POST", url, nil)
 	fmt.Println(sendRequest(req))
 	shipDetails := describeShip(ship)
-	fmt.Printf("Refueling... %v/%v\n", shipDetails.Ship.Fuel.Current,
+	fmt.Printf("%v refueling... %v/%v\n", ship,
+		shipDetails.Ship.Fuel.Current,
 		shipDetails.Ship.Fuel.Capacity)
 }
 
@@ -250,7 +256,8 @@ func dockShip(ship string) {
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("POST", url, nil)
 	sendRequest(req)
-	fmt.Println("Docking...")
+	fmt.Println(ship, "docking...")
+	time.Sleep(100 * time.Millisecond)
 	shipDetails := describeShip(ship)
 	if shipDetails.Ship.Fuel.Current < shipDetails.Ship.Fuel.Capacity/2 {
 		refuelShip(ship)
