@@ -16,7 +16,19 @@ import (
 	"spacetraders/objects"
 )
 
-const spaceport string = "X1-DF55-69207D"
+// Trading hub (-5, 9) X1-DF55-89861D, moon, imports iron/copper/al ores
+const baseMetalsMoon string = "X1-DF55-89861D"
+
+// Trading hub (-5, 9) X1-DF55-64862A, volcanic moon, imports ammonia ice
+const ammoniaMoon string = "X1-DF55-64862A"
+
+// Trading hub (-5, 9) X1-DF55-71593D, frozen moon, imports platinum/gold/silver
+const nobleMetalsMoon string = "X1-DF55-71593D"
+
+// Trading hub (49, -50) X1-DF55-49148D, planet dried seas
+const hq string = "X1-DF55-20250Z"            // (-5, 9) Al drop-off, 2min travel
+const asteroidField string = "X1-DF55-17335A" // (30, -5)
+const spaceport string = "X1-DF55-69207D"     // (32, -38), trading hub
 
 var miningShips []string = readMiningShipNames()
 var auth string = generateAuth()
@@ -24,16 +36,26 @@ var client *http.Client = &http.Client{}
 
 func main() {
 	//listWaypointsInSystem()
-	//travelToAsteroidField()
-	//listMyShips()
-	//orbitLocation(miningShip2)
-	//localMarket()
+	//viewMarket(asteroidField)
 	//viewContract() // Aluminum ore
 	//fmt.Println(describeShip(miningShip2).Ship.Fuel)
-	//sellCargo(miningShip2, "ICE_WATER", 7)
 	//viewShipsForSale("X1-DF55")
-	gather()
-	//purchaseShip()
+	viewAgent() // 38k credits
+	//gather()
+	//deliverAlum(miningShips[1])
+	//listMyShips()
+	//dockShip(miningShips[2])
+	//deliverAlum(miningShips[2])
+	//refuelShip(miningShips[0])
+	//sellCargo(miningShips[2], "COPPER_ORE", -1)
+	//orbitLocation(miningShips[2])
+	//travelTo(miningShips[2], asteroidField)
+	//dropOffAlAndReturn(miningShips[1])
+}
+
+func viewAgent() {
+	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/agent", nil)
+	fmt.Println(sendRequest(req))
 }
 
 func gather() {
@@ -41,6 +63,7 @@ func gather() {
 	for _, ship := range miningShips {
 		wg.Add(1)
 		go collectAndDeliverAl(ship, wg)
+		time.Sleep(3 * time.Second)
 	}
 	wg.Wait()
 }
@@ -59,11 +82,33 @@ func collectAndDeliverAl(ship string, wg *sync.WaitGroup) {
 		dockShip(ship)
 		sellCargoBesidesAl(ship)
 		orbitLocation(ship)
-		if describeShip(ship).Ship.Cargo.Units > 25 {
+		cargo := describeShip(ship).Ship.Cargo
+		if float64(cargo.Units)/float64(cargo.Capacity) > 0.9 {
 			dropOffAlAndReturn(ship)
 		}
 	}
 	wg.Done()
+}
+
+func deliverAlum(ship string) {
+	// Drop off Al ore.
+	var amount string
+	for _, material := range describeShip(ship).Ship.Cargo.Inventory {
+		if material.Symbol == "ALUMINUM_ORE" {
+			amount = strconv.Itoa(material.Units)
+		}
+	}
+	//fmt.Println(describeShip(miningShips[1]).Ship.Cargo.Inventory[0].Symbol)
+	//amount = strconv.Itoa(describeShip(ship).Ship.Cargo.Units)
+	jsonStrs := []string{`{"shipSymbol":"`, ship, `",`,
+		`"tradeSymbol": "ALUMINUM_ORE",
+"units": "`, amount, `"}`}
+	jsonContent := []byte(strings.Join(jsonStrs, ""))
+
+	url := "https://api.spacetraders.io/v2/my/contracts/clhjbx6q88h4as60djwb2iju7/deliver"
+	req := makeRequest("POST", url, jsonContent)
+	req.Header.Set("Content-Type", "application/json")
+	fmt.Println(sendRequest(req))
 }
 
 func dropOffAlAndReturn(ship string) {
@@ -80,43 +125,48 @@ func dropOffAlAndReturn(ship string) {
 	fmt.Println(sendRequest(req))
 
 	// Travel time.
-	time.Sleep(180 * time.Second)
+	fmt.Println(ship, "moving to the drop-off")
+	time.Sleep(130 * time.Second)
 	dockShip(ship)
 
-	// Drop off Al ore.
-	jsonStrs := []string{`{"shipSymbol":"`, ship, `",`,
-		`"tradeSymbol": "ALUMINUM_ORE",
-"units": "28"}`}
-	jsonContent = []byte(strings.Join(jsonStrs, ""))
-
-	url = "https://api.spacetraders.io/v2/my/contracts/clhjbx6q88h4as60djwb2iju7/deliver"
-	req = makeRequest("POST", url, jsonContent)
-	req.Header.Set("Content-Type", "application/json")
-	fmt.Println(sendRequest(req))
+	// Drop off Al
+	deliverAlum(ship)
 
 	// Return to mining location.
-	orbitLocation(ship)
-	travelToAsteroidField(ship)
-	time.Sleep(180 * time.Second)
+	//orbitLocation(ship)
+	//travelTo(ship, asteroidField)
+	//fmt.Println(ship, "returning from the drop-off")
+	fmt.Println(ship, "standing by at the drop-off")
+	time.Sleep(130 * time.Second)
 }
 
+// TODO: rename
 func sellCargoBesidesAl(ship string) {
-	for {
-		cargo := describeShip(ship).Ship.Cargo.Inventory
-		if len(cargo) == 1 {
-			fmt.Println(cargo)
-			break
-		}
-		for _, item := range cargo {
-			if item.Symbol[0:2] != "AL" {
-				fmt.Println(ship, "selling", item.Symbol)
-				sellCargo(ship, item.Symbol, item.Units)
-			}
+	log.Println("entering sellCargoBesidesAl()")
+	cargo := describeShip(ship).Ship.Cargo.Inventory
+	for i := len(cargo) - 1; i >= 0; i-- {
+		item := cargo[i]
+		prefix := item.Symbol[0:4]
+		if prefix != "ALUM" { //&& prefix != "IRON" && prefix != "COPP" {
+			fmt.Println(ship, "selling", item.Symbol)
+			sellCargo(ship, item.Symbol, item.Units)
+			time.Sleep(1 * time.Second)
 		}
 	}
+	log.Println("exiting sellCargoBesidesAl()")
 }
 
 func sellCargo(ship, item string, amount int) {
+	// Set amount to -1 to sell all of the item.
+	if amount == -1 {
+		inventory := describeShip(ship).Ship.Cargo.Inventory
+		for _, material := range inventory {
+			if material.Symbol == item {
+				amount = material.Units
+			}
+		}
+	}
+
 	jsonPieces := []string{"{\n", `"symbol": "`, item, "\",\n", `"units": "`, strconv.Itoa(amount), "\"\n}"}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
 
@@ -124,7 +174,8 @@ func sellCargo(ship, item string, amount int) {
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	sendRequest(req)
+	fmt.Println(sendRequest(req))
+	log.Println("exiting sellCargo()")
 }
 
 func describeShip(ship string) objects.DataShip {
@@ -147,9 +198,8 @@ func viewContract() {
 	fmt.Println(sendRequest(req))
 }
 
-func localMarket() {
-	asteroids := "X1-DF55-17335A"
-	urlPieces := []string{"https://api.spacetraders.io/v2/systems/X1-DF55/waypoints/", asteroids, "/market"}
+func viewMarket(waypoint string) {
+	urlPieces := []string{"https://api.spacetraders.io/v2/systems/X1-DF55/waypoints/", waypoint, "/market"}
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("GET", url, nil)
 	fmt.Println(sendRequest(req))
@@ -167,11 +217,10 @@ func extractOre(ship string, repeat int) {
 			break
 		}
 		sendRequest(req)
-		fmt.Println(ship, "extraction #", i, " cargo", cargo.Units, "/", cargo.Capacity)
-		if i == (repeat - 1) {
-			break
+		fmt.Println(ship, "extracting...", "cargo", cargo.Units, "/", cargo.Capacity)
+		if i != (repeat - 1) {
+			time.Sleep(71 * time.Second)
 		}
-		time.Sleep(71 * time.Second)
 	}
 }
 
@@ -203,16 +252,15 @@ func dockShip(ship string) {
 	sendRequest(req)
 	fmt.Println("Docking...")
 	shipDetails := describeShip(ship)
-	if shipDetails.Ship.Fuel.Current < shipDetails.Ship.Fuel.Capacity {
+	if shipDetails.Ship.Fuel.Current < shipDetails.Ship.Fuel.Capacity/2 {
 		refuelShip(ship)
 	}
+	log.Println("exiting dockShip()")
 }
 
-func travelToAsteroidField(ship string) {
-	jsonContent := []byte(
-		`{
-"waypointSymbol": "X1-DF55-17335A"
-}`)
+func travelTo(ship, waypoint string) {
+	jsonPieces := []string{`{"waypointSymbol": "`, waypoint, `"}`}
+	jsonContent := []byte(strings.Join(jsonPieces, ""))
 
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/navigate"}
 	url := strings.Join(urlPieces, "")
