@@ -86,39 +86,42 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 		time.Sleep(500 * time.Millisecond)
 		orbitLocation(ship)
 		time.Sleep(1 * time.Second)
+
 		shipData := describeShip(ship).Ship
 		cargo := &shipData.Cargo
 		time.Sleep(500 * time.Millisecond)
 		if shipData.Frame.Symbol == "FRAME_DRONE" {
 			transferCargoFromDrone(ship, cargo)
-			cargo = &shipData.Cargo
 			time.Sleep(1 * time.Second)
 			if cargo.Units < cargo.Capacity {
 				continue
 			}
-			//dockShip(ship)
 			fmt.Println(ship, "waiting to transfer cargo")
-			time.Sleep(120 * time.Second)
+			time.Sleep(140 * time.Second)
 			continue
-		} else if cargo.Units == cargo.Capacity && cargo.Units == 60 {
+		} else if cargo.Units > 54 {
 			dropOffMaterialAndReturn(ship, material)
 		}
 	}
 	wg.Done()
 }
 
-func transferCargoFromDrone(drone string, cargo *objects.Cargo) {
+func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 	// TODO: stop if error in response
 	transport := describeShip(miningShips[0]).Ship
-	if transport.Nav.Route.Destination.Symbol != asteroidField {
+	if transport.Nav.WaypointSymbol != asteroidField {
 		return
 	}
 	availableSpace := transport.Cargo.Capacity - transport.Cargo.Units
-	for _, item := range cargo.Inventory {
+	for _, item := range droneCargo.Inventory {
 		if item.Units > availableSpace {
 			continue
 		}
 		transferCargo(drone, miningShips[0], item.Symbol, item.Units)
+		fmt.Println("transfering", item.Units, item.Symbol)
+		// Bookkeeping instead of making another http request.
+		// Lets calling func know to continue or wait to transfer cargo later.
+		droneCargo.Units -= item.Units
 		time.Sleep(1 * time.Second)
 	}
 }
