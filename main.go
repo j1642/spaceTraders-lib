@@ -78,7 +78,7 @@ func transferCargo(fromShip, toShip, material string, amount int) {
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 100; i++ {
-		extractOre(ship, 2)
+		extractOre(ship, 3)
 		time.Sleep(500 * time.Millisecond)
 		dockShip(ship)
 		time.Sleep(1 * time.Second)
@@ -250,7 +250,7 @@ func sellCargoBesidesMaterial(ship, material string) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix == "QUAR" || prefix == "SILI" || prefix == "DIAM" {
+		if prefix == "QUAR" || prefix == "SILI" || prefix == "DIAM" || prefix == "ICE_" {
 			sellCargo(ship, item.Symbol, item.Units)
 			fmt.Println(ship, "selling", item.Symbol)
 		}
