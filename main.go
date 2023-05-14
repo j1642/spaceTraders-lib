@@ -16,9 +16,9 @@ import (
 	"spacetraders/objects"
 )
 
-const barrenMoon string = "X1-ZA40-69371X"
-const frozenMoon string = "X1-ZA40-11513D"
-const volcanicMoon string = "X1-ZA40-97262C"
+const barrenMoon string = "X1-ZA40-69371X"   //base metals
+const frozenMoon string = "X1-ZA40-11513D"   // precious metals
+const volcanicMoon string = "X1-ZA40-97262C" // ammonia ice
 
 const hq string = "X1-ZA40-15970B"
 const asteroidField string = "X1-ZA40-99095A"
@@ -30,20 +30,14 @@ var client *http.Client = &http.Client{}
 
 func main() {
 	//listWaypointsInSystem()
-	//viewMarket(shipyard)
-	//viewContract() // Iron ore
-	//fmt.Println(describeShip(miningShip2).Ship.Fuel)
-	//viewShipsForSale(hq[:7], shipyard)
-	//viewAgent()
+	//viewMarket(volcanicMoon)
 	gather()
-	//deliverMaterial(miningShips[1])
 	//listMyShips()
-	//dockShip(miningShips[1])
-	//refuelShip(miningShips[0])
+	//deliverMaterial(miningShips[0], "IRON_ORE")
 	//sellCargo(miningShips[2], "COPPER_ORE", -1)
-	//orbitLocation(miningShips[1])
+	//dockShip(miningShips[0])
+	//orbitLocation(miningShips[0])
 	//travelTo(miningShips[0], asteroidField)
-	//dropOffMaterialAndReturn(miningShips[1])
 }
 
 func viewAgent() {
@@ -70,9 +64,9 @@ func viewShipsForSale(system, waypoint string) {
 }
 
 func transferCargo(fromShip, toShip, material string, amount int) {
-    jsonPieces := []string{`{"shipSymbol": "`, toShip, `", "tradeSymbol": "`,
-        material, `", "units": "`, strconv.Itoa(amount), `"}`}
-    jsonContent := []byte(strings.Join(jsonPieces, ""))
+	jsonPieces := []string{`{"shipSymbol": "`, toShip, `", "tradeSymbol": "`,
+		material, `", "units": "`, strconv.Itoa(amount), `"}`}
+	jsonContent := []byte(strings.Join(jsonPieces, ""))
 
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/",
 		fromShip, "/transfer"}
