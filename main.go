@@ -89,7 +89,7 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 		shipData := describeShip(ship).Ship
 		cargo := &shipData.Cargo
 		time.Sleep(500 * time.Millisecond)
-		if cargo.Units == cargo.Capacity {
+		if cargo.Units > cargo.Capacity-3 {
 			if shipData.Frame.Symbol == "FRAME_DRONE" {
 				transferCargoFromDrone(ship, cargo)
 				cargo = &shipData.Cargo
@@ -148,18 +148,80 @@ func dropOffMaterialAndReturn(ship, material string) {
 	time.Sleep(40 * time.Second)
 	dockShip(ship)
 
-	// Drop off material.
+	// Drop off contract material.
 	deliverMaterial(ship, material)
+	time.Sleep(1 * time.Second)
+	// Drop off additional materials.
+	cargo := describeShip(ship).Ship.Cargo
+	cargoAmounts := make(map[string]int)
+	for _, item := range cargo.Inventory {
+		cargoAmounts[item.Symbol] = item.Units
+	}
+	if amount, ok := cargoAmounts["ICE_WATER"]; ok {
+		sellCargo(ship, "ICE_WATER", amount)
+	}
+	orbitLocation(ship)
+
+    //TODO: DRY
+	cu_amount, cu_ok := cargoAmounts["COPPER_ORE"]
+	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
+	if cu_ok || al_ok {
+		travelTo(ship, barrenMoon)
+		time.Sleep(15 * time.Second)
+		dockShip(ship)
+		time.Sleep(1 * time.Second)
+		if cu_ok {
+			sellCargo(ship, "COPPER_ORE", cu_amount)
+			time.Sleep(1 * time.Second)
+		}
+		if al_ok {
+			sellCargo(ship, "ALUMINUM_ORE", al_amount)
+			time.Sleep(1 * time.Second)
+		}
+		orbitLocation(ship)
+	}
+
+	ag_amount, ag_ok := cargoAmounts["SILVER_ORE"]
+	au_amount, au_ok := cargoAmounts["GOLD_ORE"]
+	pt_amount, pt_ok := cargoAmounts["PLATINUM_ORE"]
+	if ag_ok || au_ok || pt_ok {
+		travelTo(ship, frozenMoon)
+		time.Sleep(15 * time.Second)
+		dockShip(ship)
+		time.Sleep(1 * time.Second)
+		if ag_ok {
+			sellCargo(ship, "SILVER_ORE", ag_amount)
+			time.Sleep(1 * time.Second)
+		}
+		if au_ok {
+			sellCargo(ship, "GOLD_ORE", au_amount)
+			time.Sleep(1 * time.Second)
+		}
+		if pt_ok {
+			sellCargo(ship, "PLATINUM_ORE", pt_amount)
+			time.Sleep(1 * time.Second)
+		}
+		orbitLocation(ship)
+	}
+	if nh3_amount, ok := cargoAmounts["AMMONIA_ICE"]; ok {
+		travelTo(ship, volcanicMoon)
+		time.Sleep(15 * time.Second)
+		dockShip(ship)
+		time.Sleep(1 * time.Second)
+		if ok {
+			sellCargo(ship, "ALUMINUM_ORE", nh3_amount)
+			time.Sleep(1 * time.Second)
+		}
+		orbitLocation(ship)
+	}
 
 	// Return to mining location.
-	orbitLocation(ship)
+	time.Sleep(1 * time.Second)
 	travelTo(ship, asteroidField)
 	fmt.Println(ship, "returning from the drop-off")
-	//fmt.Println(ship, "standing by at the drop-off")
 	time.Sleep(40 * time.Second)
 }
 
-// TODO: rename
 func sellCargoBesidesMaterial(ship, material string) {
 	log.Println("entering sellCargoBesidesMaterial()")
 	cargo := describeShip(ship).Ship.Cargo.Inventory
@@ -244,8 +306,8 @@ func extractOre(ship string, repeat int) {
 	req := makeRequest("POST", url, nil)
 	for i := 0; i < repeat; i++ {
 		cargo := describeShip(ship).Ship.Cargo
-		if cargo.Units > cargo.Capacity-4 {
-			fmt.Println("cargo full(ish)")
+		if cargo.Units == cargo.Capacity {
+			fmt.Println("cargo full")
 			break
 		}
 		sendRequest(req)
