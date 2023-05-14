@@ -16,7 +16,7 @@ import (
 	"spacetraders/objects"
 )
 
-const barrenMoon string = "X1-ZA40-69371X"   //base metals
+const barrenMoon string = "X1-ZA40-69371X"   // base metals
 const frozenMoon string = "X1-ZA40-11513D"   // precious metals
 const volcanicMoon string = "X1-ZA40-97262C" // ammonia ice
 
@@ -295,9 +295,10 @@ func sellCargo(ship, item string, amount int) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(ship, "selling...", amount, item, "for",
+	fmt.Println(ship, "selling...", amount, item, "at",
+        sale.BuySell.Transaction.PricePerUnit, "for",
 		sale.BuySell.Transaction.TotalPrice,
-		"credits:", sale.BuySell.Agent.Credits)
+        "credits:", sale.BuySell.Agent.Credits)
 
 	//log.Println("exiting sellCargo()")
 }
