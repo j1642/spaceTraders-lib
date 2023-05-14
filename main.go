@@ -30,7 +30,7 @@ var client *http.Client = &http.Client{}
 
 func main() {
 	//listWaypointsInSystem()
-	//viewMarket(volcanicMoon)
+	//viewMarket(asteroidField)
 	gather()
 	//listMyShips()
 	//deliverMaterial(miningShips[0], "IRON_ORE")
@@ -240,7 +240,7 @@ func sellCargoBesidesMaterial(ship, material string) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix == "QUAR" || prefix == "SILI" {
+		if prefix == "QUAR" || prefix == "SILI" || prefix == "DIAM" {
 			sellCargo(ship, item.Symbol, item.Units)
 			fmt.Println(ship, "selling", item.Symbol)
 		}
