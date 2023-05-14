@@ -79,27 +79,39 @@ func transferCargo(fromShip, toShip, material string, amount int) {
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 100; i++ {
 		extractOre(ship, 7)
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		dockShip(ship)
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 		sellCargoBesidesMaterial(ship, material)
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(500 * time.Millisecond)
 		orbitLocation(ship)
-		time.Sleep(250 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 		shipData := describeShip(ship).Ship
-		cargo := shipData.Cargo
-		time.Sleep(250 * time.Millisecond)
-		if float64(cargo.Units)/float64(cargo.Capacity) > 0.85 {
+		cargo := &shipData.Cargo
+		time.Sleep(500 * time.Millisecond)
+		if cargo.Units == cargo.Capacity {
 			if shipData.Frame.Symbol == "FRAME_DRONE" {
+				transferCargoFromDrone(ship, cargo)
+				cargo = &shipData.Cargo
+				time.Sleep(1 * time.Second)
+				if cargo.Units < cargo.Capacity {
+					continue
+				}
 				dockShip(ship)
 				fmt.Println(ship, "waiting to transfer cargo")
 				break
-				//transferCargo(ship, , , )
 			}
 			dropOffMaterialAndReturn(ship, material)
 		}
 	}
 	wg.Done()
+}
+
+func transferCargoFromDrone(drone string, cargo *objects.Cargo) {
+	for _, item := range cargo.Inventory {
+		transferCargo(drone, miningShips[0], item.Symbol, item.Units)
+		time.Sleep(1 * time.Second)
+	}
 }
 
 func deliverMaterial(ship, material string) {
@@ -156,7 +168,7 @@ func sellCargoBesidesMaterial(ship, material string) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix != material[0:4] && prefix != "ANTI" {
+		if prefix == "QUAR" || prefix == "SILI" {
 			sellCargo(ship, item.Symbol, item.Units)
 			fmt.Println(ship, "selling", item.Symbol)
 		}
