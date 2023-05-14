@@ -16,19 +16,13 @@ import (
 	"spacetraders/objects"
 )
 
-// Trading hub (-5, 9) X1-DF55-89861D, moon, imports iron/copper/al ores
-const baseMetalsMoon string = "X1-DF55-89861D"
+const barrenMoon string = "X1-ZA40-69371X"
+const frozenMoon string = "X1-ZA40-11513D"
+const volcanicMoon string = "X1-ZA40-97262C"
 
-// Trading hub (-5, 9) X1-DF55-64862A, volcanic moon, imports ammonia ice
-const ammoniaMoon string = "X1-DF55-64862A"
-
-// Trading hub (-5, 9) X1-DF55-71593D, frozen moon, imports platinum/gold/silver
-const nobleMetalsMoon string = "X1-DF55-71593D"
-
-// Trading hub (49, -50) X1-DF55-49148D, planet dried seas
-const hq string = "X1-DF55-20250Z"            // (-5, 9) Al drop-off, 2min travel
-const asteroidField string = "X1-DF55-17335A" // (30, -5)
-const spaceport string = "X1-DF55-69207D"     // (32, -38), trading hub
+const hq string = "X1-ZA40-15970B"
+const asteroidField string = "X1-ZA40-99095A"
+const shipyard string = "X1-ZA40-68707C"
 
 var miningShips []string = readMiningShipNames()
 var auth string = generateAuth()
@@ -36,21 +30,20 @@ var client *http.Client = &http.Client{}
 
 func main() {
 	//listWaypointsInSystem()
-	//viewMarket(asteroidField)
-	//viewContract() // Aluminum ore
+	//viewMarket(shipyard)
+	//viewContract() // Iron ore
 	//fmt.Println(describeShip(miningShip2).Ship.Fuel)
-	//viewShipsForSale("X1-DF55")
-	//viewAgent() // 38k credits
+	//viewShipsForSale("X1-ZA40")
+	//viewAgent()
 	gather()
-	//deliverAlum(miningShips[1])
+	//deliverMaterial(miningShips[1])
 	//listMyShips()
-	//dockShip(miningShips[2])
-	//deliverAlum(miningShips[2])
+	//dockShip(miningShips[1])
 	//refuelShip(miningShips[0])
 	//sellCargo(miningShips[2], "COPPER_ORE", -1)
-	//orbitLocation(miningShips[2])
-	//travelTo(miningShips[2], asteroidField)
-	//dropOffAlAndReturn(miningShips[1])
+	//orbitLocation(miningShips[1])
+	//travelTo(miningShips[0], asteroidField)
+	//dropOffMaterialAndReturn(miningShips[1])
 }
 
 func viewAgent() {
