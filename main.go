@@ -245,19 +245,18 @@ func dropOffMaterialAndReturn(ship, material string) {
 }
 
 func sellCargoBesidesMaterial(ship, material string) {
-	log.Println("entering sellCargoBesidesMaterial()")
+	fmt.Println("entering sellCargoBesidesMaterial()")
 	cargo := describeShip(ship).Ship.Cargo.Inventory
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
 		if prefix == "QUAR" || prefix == "SILI" || prefix == "DIAM" || prefix == "ICE_" {
 			sellCargo(ship, item.Symbol, item.Units)
-			fmt.Println(ship, "selling", item.Symbol)
 		}
 		time.Sleep(1 * time.Second)
 	}
 	time.Sleep(100 * time.Millisecond)
-	log.Println("exiting sellCargoBesidesMaterial()")
+	fmt.Println("exiting sellCargoBesidesMaterial()")
 }
 
 func buyCargo(ship, item string, amount int) {
@@ -289,8 +288,18 @@ func sellCargo(ship, item string, amount int) {
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	fmt.Println(sendRequest(req))
-	log.Println("exiting sellCargo()")
+
+	reply := sendRequest(req)
+	var sale objects.DataBuySell
+	err := json.Unmarshal(reply.Bytes(), &sale)
+	if err != nil {
+		log.Fatal(err)
+	}
+	fmt.Println(ship, "selling...", amount, item, "for",
+		sale.BuySell.Transaction.TotalPrice,
+		"credits:", sale.BuySell.Agent.Credits)
+
+	fmt.Println("exiting sellCargo()")
 }
 
 func describeShip(ship string) objects.DataShip {
@@ -373,7 +382,7 @@ func dockShip(ship string) {
 	if shipDetails.Ship.Fuel.Current < shipDetails.Ship.Fuel.Capacity/2 {
 		refuelShip(ship)
 	}
-	log.Println("exiting dockShip()")
+	fmt.Println("exiting dockShip()")
 }
 
 func travelTo(ship, waypoint string) {
