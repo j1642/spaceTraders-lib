@@ -78,7 +78,7 @@ func transferCargo(fromShip, toShip, material string, amount int) {
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 100; i++ {
-		extractOre(ship, 3)
+		extractOre(ship, 2)
 		time.Sleep(500 * time.Millisecond)
 		dockShip(ship)
 		time.Sleep(1 * time.Second)
@@ -99,7 +99,7 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 			fmt.Println(ship, "waiting to transfer cargo")
 			time.Sleep(140 * time.Second)
 			continue
-		} else if cargo.Units > 54 {
+		} else if cargo.Units == 60 {
 			dropOffMaterialAndReturn(ship, material)
 		}
 	}
@@ -114,15 +114,22 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 	}
 	availableSpace := transport.Cargo.Capacity - transport.Cargo.Units
 	for _, item := range droneCargo.Inventory {
+		var amount int
 		if item.Units > availableSpace {
-			continue
+			amount = availableSpace
+		} else {
+			amount = item.Units
 		}
-		transferCargo(drone, miningShips[0], item.Symbol, item.Units)
-		fmt.Println("transfering", item.Units, item.Symbol)
+		transferCargo(drone, miningShips[0], item.Symbol, amount)
+		fmt.Println("transfering", amount, item.Symbol)
 		// Bookkeeping instead of making another http request.
 		// Lets calling func know to continue or wait to transfer cargo later.
-		droneCargo.Units -= item.Units
+		droneCargo.Units -= amount
 		time.Sleep(1 * time.Second)
+		if amount == availableSpace {
+			break
+		}
+		availableSpace -= amount
 	}
 }
 
