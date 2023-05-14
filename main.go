@@ -245,7 +245,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 }
 
 func sellCargoBesidesMaterial(ship, material string) {
-	fmt.Println("entering sellCargoBesidesMaterial()")
+	//log.Println("entering sellCargoBesidesMaterial()")
 	cargo := describeShip(ship).Ship.Cargo.Inventory
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
@@ -256,7 +256,7 @@ func sellCargoBesidesMaterial(ship, material string) {
 		time.Sleep(1 * time.Second)
 	}
 	time.Sleep(100 * time.Millisecond)
-	fmt.Println("exiting sellCargoBesidesMaterial()")
+	//log.Println("exiting sellCargoBesidesMaterial()")
 }
 
 func buyCargo(ship, item string, amount int) {
@@ -299,7 +299,7 @@ func sellCargo(ship, item string, amount int) {
 		sale.BuySell.Transaction.TotalPrice,
 		"credits:", sale.BuySell.Agent.Credits)
 
-	fmt.Println("exiting sellCargo()")
+	//log.Println("exiting sellCargo()")
 }
 
 func describeShip(ship string) objects.DataShip {
@@ -382,7 +382,7 @@ func dockShip(ship string) {
 	if shipDetails.Ship.Fuel.Current < shipDetails.Ship.Fuel.Capacity/2 {
 		refuelShip(ship)
 	}
-	fmt.Println("exiting dockShip()")
+	//log.Println("exiting dockShip()")
 }
 
 func travelTo(ship, waypoint string) {
