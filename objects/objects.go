@@ -50,7 +50,7 @@ type OneIndentedField struct {
 
 type NavRoute struct {
 	Departure   NavRouteLocation `json:"departure,omitempty"`
-	Destination NavRouteLocation `json:"desination,omitempty"`
+	Destination NavRouteLocation `json:"destination,omitempty"`
 }
 
 type NavRouteLocation struct {
