@@ -99,7 +99,8 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 				}
 				dockShip(ship)
 				fmt.Println(ship, "waiting to transfer cargo")
-				break
+				time.Sleep(120 * time.Second)
+				continue
 			}
 			dropOffMaterialAndReturn(ship, material)
 		}
@@ -108,6 +109,7 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 }
 
 func transferCargoFromDrone(drone string, cargo *objects.Cargo) {
+	// TODO: stop if error in response
 	for _, item := range cargo.Inventory {
 		transferCargo(drone, miningShips[0], item.Symbol, item.Units)
 		time.Sleep(1 * time.Second)
@@ -162,7 +164,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 	}
 	orbitLocation(ship)
 
-    //TODO: DRY
+	//TODO: DRY
 	cu_amount, cu_ok := cargoAmounts["COPPER_ORE"]
 	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
 	if cu_ok || al_ok {
@@ -209,7 +211,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 		dockShip(ship)
 		time.Sleep(1 * time.Second)
 		if ok {
-			sellCargo(ship, "ALUMINUM_ORE", nh3_amount)
+			sellCargo(ship, "AMMONIA_ICE", nh3_amount)
 			time.Sleep(1 * time.Second)
 		}
 		orbitLocation(ship)
