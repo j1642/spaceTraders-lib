@@ -114,6 +114,9 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 	}
 	availableSpace := transport.Cargo.Capacity - transport.Cargo.Units
 	for _, item := range droneCargo.Inventory {
+		if availableSpace == 0 {
+			return
+		}
 		var amount int
 		if item.Units > availableSpace {
 			amount = availableSpace
@@ -127,7 +130,7 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		droneCargo.Units -= amount
 		time.Sleep(1 * time.Second)
 		if amount == availableSpace {
-			break
+			return
 		}
 		availableSpace -= amount
 	}
