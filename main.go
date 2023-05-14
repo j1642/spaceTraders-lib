@@ -25,7 +25,7 @@ const asteroidField string = "X1-ZA40-99095A"
 const shipyard string = "X1-ZA40-68707C"
 
 var miningShips []string = readMiningShipNames()
-var auth string = generateAuth()
+var auth string = readAuth()
 var client *http.Client = &http.Client{}
 
 func main() {
@@ -444,7 +444,7 @@ func sendRequest(request *http.Request) *bytes.Buffer {
 	return &out
 }
 
-func generateAuth() string {
+func readAuth() string {
 	key, err := os.ReadFile("secrets.txt")
 	if err != nil {
 		log.Fatal(err)
