@@ -110,8 +110,11 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 
 func transferCargoFromDrone(drone string, cargo *objects.Cargo) {
 	// TODO: stop if error in response
-	transportShipCargo := describeShip(miningShips[0]).Ship.Cargo
-	availableSpace := transportShipCargo.Capacity - transportShipCargo.Units
+	transport := describeShip(miningShips[0]).Ship
+	if transport.Nav.Route.Destination.Symbol != asteroidField {
+		return
+	}
+	availableSpace := transport.Cargo.Capacity - transport.Cargo.Units
 	for _, item := range cargo.Inventory {
 		if item.Units > availableSpace {
 			continue
