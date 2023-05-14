@@ -70,11 +70,15 @@ func viewShipsForSale(system, waypoint string) {
 }
 
 func transferCargo(fromShip, toShip, material string, amount int) {
+    jsonPieces := []string{`{"shipSymbol": "`, toShip, `", "tradeSymbol": "`,
+        material, `", "units": "`, strconv.Itoa(amount), `"}`}
+    jsonContent := []byte(strings.Join(jsonPieces, ""))
 
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/",
 		fromShip, "/transfer"}
 	url := strings.Join(urlPieces, "")
-	req := makeRequest("POST", url, nil)
+	req := makeRequest("POST", url, jsonContent)
+	req.Header.Set("Content-Type", "application/json")
 	fmt.Println(sendRequest(req))
 }
 
