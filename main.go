@@ -40,11 +40,6 @@ func main() {
 	//travelTo(miningShips[0], asteroidField)
 }
 
-func viewAgent() {
-	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/agent", nil)
-	fmt.Println(sendRequest(req))
-}
-
 func gather() {
 	wg := &sync.WaitGroup{}
 	for _, ship := range miningShips {
@@ -416,6 +411,12 @@ func listWaypointsInSystem() {
 	req := makeRequest("GET", "https://api.spacetraders.io/v2/systems/X1-ZA40/waypoints", nil)
 	fmt.Println(sendRequest(req))
 }
+
+func viewAgent() {
+	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/agent", nil)
+	fmt.Println(sendRequest(req))
+}
+
 
 func register(callSign string) {
 	jsonPieces := []string{`{"symbol": "`, callSign, `", "faction": "COSMIC"}`}
