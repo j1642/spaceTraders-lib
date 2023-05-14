@@ -16,6 +16,7 @@ import (
 	"spacetraders/objects"
 )
 
+// ship prices: ore hound 206k, drone 91k
 const barrenMoon string = "X1-ZA40-69371X"   // base metals
 const frozenMoon string = "X1-ZA40-11513D"   // precious metals
 const volcanicMoon string = "X1-ZA40-97262C" // ammonia ice
@@ -30,14 +31,9 @@ var client *http.Client = &http.Client{}
 
 func main() {
 	//listWaypointsInSystem()
-	//viewMarket(asteroidField)
+	//conductSurvey(miningShips[0])
 	gather()
 	//listMyShips()
-	//deliverMaterial(miningShips[0], "IRON_ORE")
-	//sellCargo(miningShips[2], "COPPER_ORE", -1)
-	//dockShip(miningShips[0])
-	//orbitLocation(miningShips[0])
-	//travelTo(miningShips[0], asteroidField)
 }
 
 func gather() {
@@ -45,7 +41,7 @@ func gather() {
 	for _, ship := range miningShips {
 		wg.Add(1)
 		go collectAndDeliverMaterial(ship, "IRON_ORE", wg)
-		time.Sleep(3 * time.Second)
+		time.Sleep(4 * time.Second)
 	}
 	wg.Wait()
 }
@@ -74,17 +70,17 @@ func transferCargo(fromShip, toShip, material string, amount int) {
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 100; i++ {
 		extractOre(ship, 3)
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(750 * time.Millisecond)
 		dockShip(ship)
 		time.Sleep(1 * time.Second)
 		sellCargoBesidesMaterial(ship, material)
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(750 * time.Millisecond)
 		orbitLocation(ship)
 		time.Sleep(1 * time.Second)
 
 		shipData := describeShip(ship).Ship
 		cargo := &shipData.Cargo
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(750 * time.Millisecond)
 		if shipData.Frame.Symbol == "FRAME_DRONE" {
 			transferCargoFromDrone(ship, cargo)
 			time.Sleep(1 * time.Second)
@@ -291,9 +287,9 @@ func sellCargo(ship, item string, amount int) {
 		log.Fatal(err)
 	}
 	fmt.Println(ship, "selling...", amount, item, "at",
-        sale.BuySell.Transaction.PricePerUnit, "for",
+		sale.BuySell.Transaction.PricePerUnit, "for",
 		sale.BuySell.Transaction.TotalPrice,
-        "credits:", sale.BuySell.Agent.Credits)
+		"credits:", sale.BuySell.Agent.Credits)
 
 	//log.Println("exiting sellCargo()")
 }
@@ -324,6 +320,15 @@ func viewMarket(waypoint string) {
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("GET", url, nil)
 	fmt.Println(sendRequest(req))
+}
+
+func conductSurvey(ship string) *bytes.Buffer {
+	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/survey"}
+	url := strings.Join(urlPieces, "")
+	req := makeRequest("POST", url, nil)
+	reply := sendRequest(req)
+	reply.WriteTo(os.Stdout)
+	return reply
 }
 
 func extractOre(ship string, repeat int) {
@@ -416,7 +421,6 @@ func viewAgent() {
 	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/agent", nil)
 	fmt.Println(sendRequest(req))
 }
-
 
 func register(callSign string) {
 	jsonPieces := []string{`{"symbol": "`, callSign, `", "faction": "COSMIC"}`}
