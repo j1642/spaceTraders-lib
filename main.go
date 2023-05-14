@@ -78,7 +78,7 @@ func transferCargo(fromShip, toShip, material string, amount int) {
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 100; i++ {
-		extractOre(ship, 7)
+		extractOre(ship, 3)
 		time.Sleep(500 * time.Millisecond)
 		dockShip(ship)
 		time.Sleep(1 * time.Second)
@@ -89,19 +89,18 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 		shipData := describeShip(ship).Ship
 		cargo := &shipData.Cargo
 		time.Sleep(500 * time.Millisecond)
-		if cargo.Units > cargo.Capacity-3 {
-			if shipData.Frame.Symbol == "FRAME_DRONE" {
-				transferCargoFromDrone(ship, cargo)
-				cargo = &shipData.Cargo
-				time.Sleep(1 * time.Second)
-				if cargo.Units < cargo.Capacity {
-					continue
-				}
-				dockShip(ship)
-				fmt.Println(ship, "waiting to transfer cargo")
-				time.Sleep(120 * time.Second)
+		if shipData.Frame.Symbol == "FRAME_DRONE" {
+			transferCargoFromDrone(ship, cargo)
+			cargo = &shipData.Cargo
+			time.Sleep(1 * time.Second)
+			if cargo.Units < cargo.Capacity {
 				continue
 			}
+			//dockShip(ship)
+			fmt.Println(ship, "waiting to transfer cargo")
+			time.Sleep(120 * time.Second)
+			continue
+		} else if cargo.Units == cargo.Capacity && cargo.Units == 60 {
 			dropOffMaterialAndReturn(ship, material)
 		}
 	}
