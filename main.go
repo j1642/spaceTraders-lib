@@ -121,14 +121,12 @@ func deliverMaterial(ship, material string) {
 			amount = strconv.Itoa(item.Units)
 		}
 	}
-	//fmt.Println(describeShip(miningShips[1]).Ship.Cargo.Inventory[0].Symbol)
-	//amount = strconv.Itoa(describeShip(ship).Ship.Cargo.Units)
 	jsonStrs := []string{`{"shipSymbol":"`, ship, `",`,
-		`"tradeSymbol": "ALUMINUM_ORE",
-"units": "`, amount, `"}`}
+		`"tradeSymbol": "`, material, `",`,
+		`"units": "`, amount, `"}`}
 	jsonContent := []byte(strings.Join(jsonStrs, ""))
 
-	url := "https://api.spacetraders.io/v2/my/contracts/clhjbx6q88h4as60djwb2iju7/deliver"
+	url := "https://api.spacetraders.io/v2/my/contracts/clhmm0r8d0of5s60dn7otx0lc/deliver"
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
 	fmt.Println(sendRequest(req))
@@ -147,7 +145,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 
 	// Travel time.
 	fmt.Println(ship, "moving to the drop-off")
-	time.Sleep(130 * time.Second)
+	time.Sleep(40 * time.Second)
 	dockShip(ship)
 
 	// Drop off material.
@@ -158,7 +156,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 	travelTo(ship, asteroidField)
 	fmt.Println(ship, "returning from the drop-off")
 	//fmt.Println(ship, "standing by at the drop-off")
-	time.Sleep(130 * time.Second)
+	time.Sleep(40 * time.Second)
 }
 
 // TODO: rename
