@@ -89,3 +89,32 @@ type CargoItem struct {
 }
 
 // End ship description.
+
+// Buy/sell
+type DataBuySell struct {
+	BuySell BuySell `json:"data,omitempty"`
+}
+
+type BuySell struct {
+	Agent       Agent       `json:"agent,omitempty"`
+	Cargo       Cargo       `json:"cargo,omitempty"`
+	Transaction Transaction `json:"transaction,omitempty"`
+}
+
+type Agent struct {
+	AccountId    string `json:"accountId,omitempty"`
+	Symbol       string `json:"symbol,omitempty"`
+	Headquarters string `json:"headquarters,omitempty"`
+	Credits      int    `json:"credits,omitempty"`
+}
+
+type Transaction struct {
+	WaypointSymbol string `json:"waypointSymbol,omitempty"`
+	ShipSymbol     string `json:"shipSymbol,omitempty"`
+	TradeSymbol    string `json:"tradeSymbol,omitempty"`
+	Type           string `json:"type,omitempty"`
+	Units          int    `json:"units,omitempty"`
+	PricePerUnit   int    `json:"pricePerUnit,omitempty"`
+	TotalPrice     int    `json:"totalPrice,omitempty"`
+	TimeStamp      string `json:"timeStamp,omitempty"`
+}
