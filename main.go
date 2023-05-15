@@ -55,7 +55,7 @@ func viewShipsForSale(system, waypoint string) {
 	fmt.Println(sendRequest(req))
 }
 
-func transferCargo(fromShip, toShip, material string, amount int) {
+func transferCargo(fromShip, toShip, material string, amount int) *bytes.Buffer {
 	jsonPieces := []string{`{"shipSymbol": "`, toShip, `", "tradeSymbol": "`,
 		material, `", "units": "`, strconv.Itoa(amount), `"}`}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
@@ -102,10 +102,12 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 }
 
 func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
-	// TODO: stop if error in response
 	transport := describeShip(miningShips[0]).Ship
 	time.Sleep(1 * time.Second)
 	if transport.Nav.WaypointSymbol != asteroidField {
+		if float64(droneCargo.Units)/float64(droneCargo.Capacity) < 0.8 {
+			return
+		}
 		time.Sleep(140 * time.Second)
 	}
 	availableSpace := transport.Cargo.Capacity - transport.Cargo.Units
@@ -119,8 +121,21 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		} else {
 			amount = item.Units
 		}
-		transferCargo(drone, miningShips[0], item.Symbol, amount)
-		fmt.Println("transfering", amount, item.Symbol)
+
+		reply := transferCargo(drone, miningShips[0], item.Symbol, amount)
+		fmt.Println(reply)
+		transferMsg := objects.Error{}
+		err := json.Unmarshal(reply.Bytes(), &transferMsg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		// Transport ship approaching but has not arrived.
+		if transferMsg.ErrBody.Code == 4214 {
+			fmt.Println(drone, "re-attempting transfer after transport arrives")
+			time.Sleep(40 * time.Second)
+			transferCargo(drone, miningShips[0], item.Symbol, amount)
+		}
+
 		// Bookkeeping instead of making another http request.
 		// Lets calling func know to continue or wait to transfer cargo later.
 		droneCargo.Units -= amount
