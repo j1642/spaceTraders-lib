@@ -38,11 +38,12 @@ func main() {
 }
 
 func gather() {
+	// TODO: add channel for survey target if contains iron/diamonds
 	wg := &sync.WaitGroup{}
 	for _, ship := range miningShips {
 		wg.Add(1)
 		go collectAndDeliverMaterial(ship, "IRON_ORE", wg)
-		time.Sleep(6 * time.Second)
+		time.Sleep(7 * time.Second)
 	}
 	wg.Wait()
 }
@@ -92,7 +93,7 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 				continue
 			}
 			fmt.Println(ship, "waiting to transfer cargo")
-			time.Sleep(140 * time.Second)
+			time.Sleep(130 * time.Second)
 			continue
 		} else if cargo.Units == 60 {
 			dropOffMaterialAndReturn(ship, material)
@@ -108,7 +109,8 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		if float64(droneCargo.Units)/float64(droneCargo.Capacity) < 0.8 {
 			return
 		}
-		time.Sleep(140 * time.Second)
+		fmt.Println(drone, "waiting for transport (whole trip)")
+		time.Sleep(130 * time.Second)
 	}
 	availableSpace := transport.Cargo.Capacity - transport.Cargo.Units
 	for _, item := range droneCargo.Inventory {
@@ -131,8 +133,8 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		}
 		// Transport ship approaching but has not arrived.
 		if transferMsg.ErrBody.Code == 4214 {
-			fmt.Println(drone, "re-attempting transfer after transport arrives")
-			time.Sleep(40 * time.Second)
+			fmt.Println(drone, "waiting for transport (return trip)")
+			time.Sleep(30 * time.Second)
 			transferCargo(drone, miningShips[0], item.Symbol, amount)
 		}
 
@@ -178,7 +180,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 
 	// Travel time.
 	fmt.Println(ship, "moving to the drop-off")
-	time.Sleep(40 * time.Second)
+	time.Sleep(30 * time.Second)
 	dockShip(ship)
 
 	// Drop off contract material.
@@ -201,7 +203,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 	time.Sleep(1 * time.Second)
 	travelTo(ship, asteroidField)
 	fmt.Println(ship, "returning from the drop-off")
-	time.Sleep(40 * time.Second)
+	time.Sleep(30 * time.Second)
 }
 
 func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
@@ -266,7 +268,7 @@ func sellCargoBesidesMaterial(ship, material string) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix == "QUAR" || prefix == "SILI" || prefix == "DIAM" || prefix == "ICE_" {
+		if prefix == "QUAR" || prefix == "SILI" || prefix == "DIAM" || prefix == "ICE_" || prefix == "COPP" {
 			sellCargo(ship, item.Symbol, item.Units)
 		}
 		time.Sleep(1 * time.Second)
@@ -368,8 +370,8 @@ func extractOre(ship string, repeat int) {
 	for i := 0; i < repeat; i++ {
 		cargo := describeShip(ship).Ship.Cargo
 		if cargo.Units == cargo.Capacity {
-			fmt.Println("cargo full")
-			break
+			fmt.Println(ship, "cargo full")
+			return
 		}
 		sendRequest(req)
 		fmt.Println(ship, "extracting...", "cargo", cargo.Units, "/", cargo.Capacity)
