@@ -79,14 +79,14 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 		time.Sleep(1 * time.Second)
 		sellCargoBesidesMaterial(ship, material)
 		time.Sleep(1 * time.Second)
-		orbitLocation(ship)
-		time.Sleep(1 * time.Second)
 
 		shipData := describeShip(ship).Ship
 		time.Sleep(1 * time.Second)
 		cargo := &shipData.Cargo
 		if shipData.Frame.Symbol == "FRAME_DRONE" ||
 			shipData.Frame.Symbol == "FRAME_MINER" {
+			orbitLocation(ship)
+			time.Sleep(1 * time.Second)
 			transferCargoFromDrone(ship, cargo)
 			time.Sleep(1 * time.Second)
 			if cargo.Units < cargo.Capacity {
@@ -95,7 +95,14 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 			fmt.Println(ship, "waiting to transfer cargo")
 			time.Sleep(130 * time.Second)
 			continue
-		} else if cargo.Units == 60 {
+		} else if shipData.Frame.Symbol == "FRAME_FRIGATE" {
+			available := cargo.Capacity - cargo.Units
+			if available > 0 {
+				buyCargo(ship, material, available)
+                time.Sleep(1 * time.Second)
+			}
+			orbitLocation(ship)
+			time.Sleep(1 * time.Second)
 			dropOffMaterialAndReturn(ship, material)
 		}
 	}
