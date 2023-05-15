@@ -166,7 +166,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 	// Drop off contract material.
 	deliverMaterial(ship, material)
 	time.Sleep(1 * time.Second)
-	// Drop off additional materials.
+	// Sell additional materials.
 	cargo := describeShip(ship).Ship.Cargo
 	cargoAmounts := make(map[string]int)
 	for _, item := range cargo.Inventory {
@@ -177,7 +177,17 @@ func dropOffMaterialAndReturn(ship, material string) {
 	}
 	orbitLocation(ship)
 
-	//TODO: DRY
+	sellCargoOnMoons(ship, cargoAmounts)
+
+	// Return to mining location.
+	time.Sleep(1 * time.Second)
+	travelTo(ship, asteroidField)
+	fmt.Println(ship, "returning from the drop-off")
+	time.Sleep(40 * time.Second)
+}
+
+func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
+	// Sell cargo to markets that generally pay the most.
 	cu_amount, cu_ok := cargoAmounts["COPPER_ORE"]
 	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
 	if cu_ok || al_ok {
@@ -218,6 +228,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 		}
 		orbitLocation(ship)
 	}
+
 	if nh3_amount, ok := cargoAmounts["AMMONIA_ICE"]; ok {
 		travelTo(ship, volcanicMoon)
 		time.Sleep(15 * time.Second)
@@ -229,12 +240,6 @@ func dropOffMaterialAndReturn(ship, material string) {
 		}
 		orbitLocation(ship)
 	}
-
-	// Return to mining location.
-	time.Sleep(1 * time.Second)
-	travelTo(ship, asteroidField)
-	fmt.Println(ship, "returning from the drop-off")
-	time.Sleep(40 * time.Second)
 }
 
 func sellCargoBesidesMaterial(ship, material string) {
