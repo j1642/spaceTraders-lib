@@ -99,7 +99,7 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 			available := cargo.Capacity - cargo.Units
 			if available > 0 {
 				buyCargo(ship, material, available)
-                time.Sleep(1 * time.Second)
+				time.Sleep(1 * time.Second)
 			}
 			orbitLocation(ship)
 			time.Sleep(1 * time.Second)
@@ -203,6 +203,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 		sellCargo(ship, "ICE_WATER", amount)
 	}
 	orbitLocation(ship)
+	time.Sleep(500 * time.Millisecond)
 
 	sellCargoOnMoons(ship, cargoAmounts)
 
@@ -267,6 +268,7 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 		}
 		orbitLocation(ship)
 	}
+	time.Sleep(500 * time.Millisecond)
 }
 
 func sellCargoBesidesMaterial(ship, material string) {
