@@ -179,3 +179,22 @@ func TestDataBuySell(t *testing.T) {
 		t.Fatal("TestDataBuySell():", err)
 	}
 }
+
+func TestError4214(t *testing.T) {
+	jsonReply := `{
+    "error": {
+        "message": "Ship is currently in-transit from A to A and arrives in 2 seconds.",
+        "code": 4214,
+        "data": {
+            "departureSymbol": "A",
+            "destinationSymbol": "A",
+            "secondsToArrival": 2
+        }
+    }
+}`
+	var data Error
+	err := json.Unmarshal([]byte(jsonReply), &data)
+	if err != nil {
+		t.Fatal("TestDataBuySell():", err)
+	}
+}

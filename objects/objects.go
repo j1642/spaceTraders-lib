@@ -118,3 +118,17 @@ type Transaction struct {
 	TotalPrice     int    `json:"totalPrice,omitempty"`
 	TimeStamp      string `json:"timeStamp,omitempty"`
 }
+
+// Error
+
+type Error struct {
+	Message string `json:"message"`
+	Code    int    `json:"code"`
+	Data    Data   `json:"data"`
+}
+
+type Data struct {
+	DepartureSymbol   string `json:"departureSymbol,omitempty"`
+	DestinationSymbol string `json:"destinationSymbol,omitempty"`
+	SecondsToArrival  int    `json:"secondsToArrival,omitempty"`
+}
