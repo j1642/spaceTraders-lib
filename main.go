@@ -343,9 +343,13 @@ func conductSurvey(ship string) *bytes.Buffer {
 
 func extractOre(ship string, repeat int) {
 	// Similar to dockShip(), refuelShip()
+	//jsonContent := []byte(`{"survey": "X1-ZA40-99095A-10FAEF"}`)
+
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/extract"}
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("POST", url, nil)
+	//req.Header.Set("Content-Type", "application/json")
+
 	for i := 0; i < repeat; i++ {
 		cargo := describeShip(ship).Ship.Cargo
 		if cargo.Units == cargo.Capacity {
