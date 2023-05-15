@@ -34,6 +34,7 @@ func main() {
 	//conductSurvey(miningShips[0])
 	gather()
 	//listMyShips()
+	//dropOffMaterialAndReturn(miningShips[0], "IRON_ORE")
 }
 
 func gather() {
@@ -68,19 +69,19 @@ func transferCargo(fromShip, toShip, material string, amount int) {
 }
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
-	for i := 0; i < 100; i++ {
+	for i := 0; i < 500; i++ {
 		extractOre(ship, 3)
-		time.Sleep(750 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 		dockShip(ship)
 		time.Sleep(1 * time.Second)
 		sellCargoBesidesMaterial(ship, material)
-		time.Sleep(750 * time.Millisecond)
+		time.Sleep(1 * time.Second)
 		orbitLocation(ship)
 		time.Sleep(1 * time.Second)
 
 		shipData := describeShip(ship).Ship
+		time.Sleep(1 * time.Second)
 		cargo := &shipData.Cargo
-		time.Sleep(750 * time.Millisecond)
 		if shipData.Frame.Symbol == "FRAME_DRONE" {
 			transferCargoFromDrone(ship, cargo)
 			time.Sleep(1 * time.Second)
@@ -100,8 +101,9 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 	// TODO: stop if error in response
 	transport := describeShip(miningShips[0]).Ship
+	time.Sleep(1 * time.Second)
 	if transport.Nav.WaypointSymbol != asteroidField {
-		return
+		time.Sleep(140 * time.Second)
 	}
 	availableSpace := transport.Cargo.Capacity - transport.Cargo.Units
 	for _, item := range droneCargo.Inventory {
