@@ -138,6 +138,9 @@ func TestDataShip(t *testing.T) {
 	if err != nil {
 		t.Fatal("TestDataShip():", err)
 	}
+	if data.Ship.Nav.Route.Departure.Type != "MOON" {
+		t.Fatalf("Expected 'MOON', got=%v", data.Ship.Nav.Route.Departure.Type)
+	}
 }
 
 func TestDataBuySell(t *testing.T) {
@@ -178,6 +181,9 @@ func TestDataBuySell(t *testing.T) {
 	if err != nil {
 		t.Fatal("TestDataBuySell():", err)
 	}
+	if data.BuySell.Transaction.Type != "SELL" {
+		t.Fatalf("Expected 'SELL', got=%v", data.BuySell.Transaction.Type)
+	}
 }
 
 func TestError4214(t *testing.T) {
@@ -196,5 +202,11 @@ func TestError4214(t *testing.T) {
 	err := json.Unmarshal([]byte(jsonReply), &data)
 	if err != nil {
 		t.Fatal("TestDataBuySell():", err)
+	}
+	if data.ErrBody.Code != 4214 {
+		t.Fatalf("Expected 4124, got=%v", data.ErrBody.Code)
+	}
+	if data.ErrBody.Data.SecondsToArrival != 2 {
+		t.Fatalf("Expected 2, got=%v", data.ErrBody.Data.SecondsToArrival)
 	}
 }

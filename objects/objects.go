@@ -120,8 +120,11 @@ type Transaction struct {
 }
 
 // Error
-
 type Error struct {
+	ErrBody ErrBody `json:"error"`
+}
+
+type ErrBody struct {
 	Message string `json:"message"`
 	Code    int    `json:"code"`
 	Data    Data   `json:"data"`
