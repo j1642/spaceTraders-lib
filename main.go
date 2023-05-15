@@ -42,7 +42,7 @@ func gather() {
 	for _, ship := range miningShips {
 		wg.Add(1)
 		go collectAndDeliverMaterial(ship, "IRON_ORE", wg)
-		time.Sleep(4 * time.Second)
+		time.Sleep(6 * time.Second)
 	}
 	wg.Wait()
 }
@@ -65,12 +65,14 @@ func transferCargo(fromShip, toShip, material string, amount int) {
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	fmt.Println(sendRequest(req))
+	reply := sendRequest(req)
+	fmt.Println(fromShip, "transfering", amount, material)
+	return reply
 }
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 500; i++ {
-		extractOre(ship, 3)
+		extractOre(ship, 2)
 		time.Sleep(1 * time.Second)
 		dockShip(ship)
 		time.Sleep(1 * time.Second)
@@ -82,7 +84,8 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 		shipData := describeShip(ship).Ship
 		time.Sleep(1 * time.Second)
 		cargo := &shipData.Cargo
-		if shipData.Frame.Symbol == "FRAME_DRONE" {
+		if shipData.Frame.Symbol == "FRAME_DRONE" ||
+			shipData.Frame.Symbol == "FRAME_MINER" {
 			transferCargoFromDrone(ship, cargo)
 			time.Sleep(1 * time.Second)
 			if cargo.Units < cargo.Capacity {
@@ -353,6 +356,9 @@ func extractOre(ship string, repeat int) {
 		fmt.Println(ship, "extracting...", "cargo", cargo.Units, "/", cargo.Capacity)
 		if i != (repeat - 1) {
 			time.Sleep(71 * time.Second)
+			if ship == miningShips[4] {
+				time.Sleep(10 * time.Second)
+			}
 		}
 	}
 }
