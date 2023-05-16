@@ -284,7 +284,7 @@ func sellCargoBesidesMaterial(ship, material string) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix == "QUAR" || prefix == "SILI" || prefix == "DIAM" || prefix == "ICE_" || prefix == "COPP" {
+		if prefix == "QUAR" || prefix == "SILI" || prefix == "DIAM" || prefix == "ICE_" || prefix == "ALUM" {
 			sellCargo(ship, item.Symbol, item.Units)
 		}
 		time.Sleep(1 * time.Second)
