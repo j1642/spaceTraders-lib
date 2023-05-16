@@ -73,12 +73,17 @@ func transferCargo(fromShip, toShip, material string, amount int) *bytes.Buffer 
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 500; i++ {
-		extractOre(ship, 2)
-		time.Sleep(1 * time.Second)
-		dockShip(ship)
-		time.Sleep(1 * time.Second)
-		sellCargoBesidesMaterial(ship, material)
-		time.Sleep(1 * time.Second)
+		if ship != miningShips[0] {
+			extractOre(ship, 2)
+			time.Sleep(1 * time.Second)
+			dockShip(ship)
+			time.Sleep(1 * time.Second)
+			sellCargoBesidesMaterial(ship, material)
+			time.Sleep(1 * time.Second)
+		} else {
+			dockShip(ship)
+			time.Sleep(20 * time.Second)
+		}
 
 		shipData := describeShip(ship).Ship
 		time.Sleep(1 * time.Second)
