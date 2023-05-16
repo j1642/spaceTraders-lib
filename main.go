@@ -43,7 +43,7 @@ func gather() {
 	for _, ship := range miningShips {
 		wg.Add(1)
 		go collectAndDeliverMaterial(ship, "IRON_ORE", wg)
-		time.Sleep(7 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 	wg.Wait()
 }
@@ -67,23 +67,18 @@ func transferCargo(fromShip, toShip, material string, amount int) *bytes.Buffer 
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
 	reply := sendRequest(req)
-	fmt.Println(fromShip, "transfering", amount, material)
+	fmt.Println(fromShip, "transferring", amount, material)
 	return reply
 }
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 500; i++ {
-		if ship != miningShips[0] {
-			extractOre(ship, 2)
-			time.Sleep(1 * time.Second)
-			dockShip(ship)
-			time.Sleep(1 * time.Second)
-			sellCargoBesidesMaterial(ship, material)
-			time.Sleep(1 * time.Second)
-		} else {
-			dockShip(ship)
-			time.Sleep(20 * time.Second)
-		}
+		extractOre(ship, 2)
+		time.Sleep(1 * time.Second)
+		dockShip(ship)
+		time.Sleep(1 * time.Second)
+		sellCargoBesidesMaterial(ship, material)
+		time.Sleep(1 * time.Second)
 
 		shipData := describeShip(ship).Ship
 		time.Sleep(1 * time.Second)
@@ -168,6 +163,7 @@ func deliverMaterial(ship, material string) {
 			amount = strconv.Itoa(item.Units)
 		}
 	}
+	time.Sleep(1 * time.Second)
 	jsonStrs := []string{`{"shipSymbol":"`, ship, `",`,
 		`"tradeSymbol": "`, material, `",`,
 		`"units": "`, amount, `"}`}
@@ -194,6 +190,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 	fmt.Println(ship, "moving to the drop-off")
 	time.Sleep(30 * time.Second)
 	dockShip(ship)
+	time.Sleep(1 * time.Second)
 
 	// Drop off contract material.
 	deliverMaterial(ship, material)
