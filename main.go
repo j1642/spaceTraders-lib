@@ -237,6 +237,7 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 			time.Sleep(1 * time.Second)
 		}
 		orbitLocation(ship)
+		time.Sleep(1 * time.Second)
 	}
 
 	ag_amount, ag_ok := cargoAmounts["SILVER_ORE"]
@@ -260,6 +261,7 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 			time.Sleep(1 * time.Second)
 		}
 		orbitLocation(ship)
+		time.Sleep(1 * time.Second)
 	}
 
 	if nh3_amount, ok := cargoAmounts["AMMONIA_ICE"]; ok {
@@ -272,8 +274,8 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 			time.Sleep(1 * time.Second)
 		}
 		orbitLocation(ship)
+		time.Sleep(1 * time.Second)
 	}
-	time.Sleep(500 * time.Millisecond)
 }
 
 func sellCargoBesidesMaterial(ship, material string) {
