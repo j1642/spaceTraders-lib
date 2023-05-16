@@ -82,13 +82,11 @@ type Cargo struct {
 }
 
 type CargoItem struct {
-	Symbol      string `json:"symbol,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
+	Symbol      string `json:"symbol"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 	Units       int    `json:"units,omitempty"`
 }
-
-// End ship description.
 
 // Buy/sell
 type DataBuySell struct {
@@ -134,4 +132,54 @@ type Data struct {
 	DepartureSymbol   string `json:"departureSymbol,omitempty"`
 	DestinationSymbol string `json:"destinationSymbol,omitempty"`
 	SecondsToArrival  int    `json:"secondsToArrival,omitempty"`
+}
+
+// Market description
+type Market struct {
+	MarketBody MarketBody `json:"data"`
+}
+
+type MarketBody struct {
+	Symbol       string        `json:"symbol"`
+	Imports      []CargoItem   `json:"imports"`
+	Exports      []CargoItem   `json:"exports"`
+	Exchange     []CargoItem   `json:"exchange"`
+	Transactions []Transaction `json:"transactions,omitempty"`
+	TradeGoods   []TradeGood   `json:"tradeGoods,omitempty"`
+}
+
+type TradeGood struct {
+	Symbol        string `json:"symbol"`
+	TradeVolume   int    `json:"tradeVolume"`
+	Supply        string `json:"supply"`
+	PurchasePrice int    `json:"purchasePrice"`
+	SellPrice     int    `json:"sellPrice"`
+}
+
+// Extraction/mining
+type ExtractionData struct {
+	ExtractBody ExtractBody `json:"data"`
+}
+
+type ExtractBody struct {
+	Extraction Extraction `json:"extraction"`
+	Cooldown   Cooldown   `json:"cooldown"`
+	Cargo      Cargo      `json:"cargo"`
+}
+
+type Extraction struct {
+	ShipSymbol string `json:"shipSymbol"`
+	Yield      Yield  `json:"yield"`
+}
+
+type Cooldown struct {
+	ShipSymbol       string `json:"shipSymbol"`
+	TotalSeconds     int    `json:"totalSeconds"`
+	RemainingSeconds int    `json:"remainingSeconds"`
+	Expiration       string `json:"expiration"`
+}
+
+type Yield struct {
+	Item  string `json:"symbol"`
+	Units int    `json:"units"`
 }

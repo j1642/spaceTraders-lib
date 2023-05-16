@@ -210,3 +210,107 @@ func TestError4214(t *testing.T) {
 		t.Fatalf("Expected 2, got=%v", data.ErrBody.Data.SecondsToArrival)
 	}
 }
+
+func TestMarketData(t *testing.T) {
+	jsonReply := `{
+    "data": {
+        "symbol": "A",
+        "imports": [
+            {
+                "symbol": "ICE_WATER",
+                "name": "Fresh Water",
+                "description": "High-quality fresh water, essential for life support and hydroponic agriculture."
+            },
+            {
+                "symbol": "PLASTICS",
+                "name": "Plastics",
+                "description": "A wide range of plastic materials used in various applications, including packaging, construction, and manufacturing."
+            }
+        ],
+        "exports": [
+            {
+                "symbol": "GRAVITON_EMITTERS",
+                "name": "Graviton Emitters",
+                "description": "Advanced devices that generate and manipulate gravitons, used in advanced propulsion and weapons systems."
+            }
+        ],
+        "exchange": [
+                    {
+                        "symbol": "FUEL",
+                        "name": "Fuel",
+                        "description": "High-energy fuel used in spacecraft propulsion systems to enable long-distance space travel."
+                    }
+        ],
+        "transactions": [
+                    {
+                        "waypointSymbol": "A",
+                        "shipSymbol": "A",
+                        "tradeSymbol": "A",
+                        "type": "SELL",
+                        "units": 1,
+                        "pricePerUnit": 1,
+                        "totalPrice": 1,
+                        "timestamp": "A"
+                    }
+        ],
+        "tradeGoods": [
+                    {
+                        "symbol": "A",
+                        "tradeVolume": 1000,
+                        "supply": "MODERATE",
+                        "purchasePrice": 1,
+                        "sellPrice": 1
+                    }
+        ]
+    }
+}`
+	var data Market
+	err := json.Unmarshal([]byte(jsonReply), &data)
+	if err != nil {
+		t.Fatal("TestDataBuySell():", err)
+	}
+	if data.MarketBody.Imports[0].Symbol != "ICE_WATER" {
+		t.Fatalf("expected 'ICE_WATER', got=%v", data.MarketBody.Imports[0].Symbol)
+	}
+}
+
+func TestExtractionData(t *testing.T) {
+	jsonReply := `{
+    "data": {
+        "extraction": {
+            "shipSymbol": "A",
+            "yield": {
+                "symbol": "IRON_ORE",
+                "units": 1
+            }
+        },
+        "cooldown": {
+            "shipSymbol": "A",
+            "totalSeconds": 2,
+            "remainingSeconds": 1,
+            "expiration": "A"
+        },
+        "cargo": {
+            "capacity": 4,
+            "units": 3,
+            "inventory": [
+                {
+                    "symbol": "IRON_ORE",
+                    "name": "Iron Ore",
+                    "description": "A common and valuable ore used in the production of steel and other alloys.",
+                    "units": 3
+                }
+            ]
+        }
+    }
+}`
+	var data ExtractionData
+	err := json.Unmarshal([]byte(jsonReply), &data)
+	if err != nil {
+		t.Fatal("TestDataBuySell():", err)
+	}
+	if data.ExtractBody.Extraction.Yield.Item != "IRON_ORE" {
+		t.Fatalf("expected 'IRON_ORE', got=%v",
+			data.ExtractBody.Extraction.Yield.Item)
+	}
+}
