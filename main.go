@@ -381,18 +381,32 @@ func extractOre(ship string, repeat int) {
 	//req.Header.Set("Content-Type", "application/json")
 
 	for i := 0; i < repeat; i++ {
-		cargo := describeShip(ship).Ship.Cargo
+		shipData := describeShip(ship).Ship
+		cargo := &shipData.Cargo
 		if cargo.Units == cargo.Capacity {
 			fmt.Println(ship, "cargo full")
 			return
 		}
-		sendRequest(req)
+		reply := sendRequest(req)
+		extractMsg := objects.ExtractionData{}
+		err := json.Unmarshal(reply.Bytes(), &extractMsg)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cargo.Units += extractMsg.ExtractBody.Extraction.Yield.Units
 		fmt.Println(ship, "extracting...", "cargo", cargo.Units, "/", cargo.Capacity)
-		if i != (repeat - 1) {
-			time.Sleep(71 * time.Second)
-			if ship == miningShips[4] {
-				time.Sleep(10 * time.Second)
+
+		switch shipData.Frame.Symbol {
+		case "FRAME_FRIGATE":
+			if i != (repeat - 1) {
+				time.Sleep(70 * time.Second)
+			} else {
+				return
 			}
+		case "FRAME_DRONE":
+			time.Sleep(70 * time.Second)
+		case "FRAME_MINER":
+			time.Sleep(80 * time.Second)
 		}
 	}
 }
