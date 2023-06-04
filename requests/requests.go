@@ -298,8 +298,10 @@ func PurchaseShip(shipType, waypoint string) {
 	fmt.Println(sendRequest(req))
 }
 
-func ListWaypointsInSystem() {
-	req := makeRequest("GET", "https://api.spacetraders.io/v2/systems/X1-ZA40/waypoints", nil)
+func ListWaypointsInSystem(system string) {
+	url := strings.Join(
+		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints"}, "")
+	req := makeRequest("GET", url, nil)
 	fmt.Println(sendRequest(req))
 }
 
@@ -308,12 +310,24 @@ func ViewAgent() {
 	fmt.Println(sendRequest(req))
 }
 
-func Register(callSign string) {
+func AcceptContract(contractId string) {
+	url := strings.Join([]string{"https://api.spacetraders.io/v2/my/contracts/",
+		contractId, "/accept"}, "")
+	req := makeRequest("POST", url, nil)
+	fmt.Println(sendRequest(req))
+}
+
+func RegisterNewUser(callSign string) *bytes.Buffer {
 	jsonPieces := []string{`{"symbol": "`, callSign, `", "faction": "COSMIC"}`}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
 	req := makeRequest("POST", "https://api.spacetraders.io/v2/register", jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	fmt.Println(sendRequest(req))
+	// Remove invalidated authorization key from past server reset.
+	req.Header.Del("Authorization")
+	reply := sendRequest(req)
+	fmt.Println(reply)
+
+	return reply
 }
 
 func readAuth() string {
