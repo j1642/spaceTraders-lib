@@ -13,18 +13,20 @@ import (
 	"spacetraders/requests"
 )
 
-const barrenMoon string = "X1-ZA40-69371X"   // base metals
-const frozenMoon string = "X1-ZA40-11513D"   // precious metals
-const volcanicMoon string = "X1-ZA40-97262C" // ammonia ice
+const barrenMoon string = "X1-HQ18-93722X"   // base metals
+const frozenMoon string = "X1-HQ18-53964F"   // precious metals
+const volcanicMoon string = "X1-HQ18-89363Z" // ammonia ice
 
-const hq string = "X1-ZA40-15970B"
-const asteroidField string = "X1-ZA40-99095A"
-const shipyard string = "X1-ZA40-68707C"
+const hq string = "X1-HQ18-11700D"
+const asteroidField string = "X1-HQ18-98695F"
+const shipyard string = "X1-HQ18-60817D"
 
 var miningShips []string = readMiningShipNames()
 
 func main() {
+	//requests.ViewMarket(asteroidField)
 	gather()
+	//requests.TravelTo("BAP-1", asteroidField)
 }
 
 func gather() {
