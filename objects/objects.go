@@ -5,10 +5,6 @@ type DataShip struct {
 	Ship Ship `json:"data,omitempty"`
 }
 
-func (d *DataShip) String() string {
-	return d.Ship.Symbol + "2"
-}
-
 type Ship struct {
 	Symbol       string             `json:"symbol,omitempty"`
 	Nav          Nav                `json:"nav,omitmpty"`
@@ -100,10 +96,11 @@ type BuySell struct {
 }
 
 type Agent struct {
-	AccountId    string `json:"accountId,omitempty"`
-	Symbol       string `json:"symbol,omitempty"`
-	Headquarters string `json:"headquarters,omitempty"`
-	Credits      int    `json:"credits,omitempty"`
+	AccountId      string `json:"accountId"`
+	Symbol         string `json:"symbol"`
+	Headquarters   string `json:"headquarters"`
+	Credits        int    `json:"credits"`
+	InitialFaction string `json:"startingFaction"`
 }
 
 type Transaction struct {
@@ -129,9 +126,10 @@ type ErrBody struct {
 }
 
 type Data struct {
-	DepartureSymbol   string `json:"departureSymbol,omitempty"`
-	DestinationSymbol string `json:"destinationSymbol,omitempty"`
-	SecondsToArrival  int    `json:"secondsToArrival,omitempty"`
+	DepartureSymbol   string   `json:"departureSymbol,omitempty"`
+	DestinationSymbol string   `json:"destinationSymbol,omitempty"`
+	SecondsToArrival  int      `json:"secondsToArrival,omitempty"`
+	Cooldown          Cooldown `json:"cooldown,omitempty"`
 }
 
 // Market description
@@ -158,7 +156,8 @@ type TradeGood struct {
 
 // Extraction/mining
 type ExtractionData struct {
-	ExtractBody ExtractBody `json:"data"`
+	ExtractBody ExtractBody `json:"data,omitempty"`
+	ErrBody     ErrBody     `json:"error,omitempty"`
 }
 
 type ExtractBody struct {
@@ -182,4 +181,53 @@ type Cooldown struct {
 type Yield struct {
 	Item  string `json:"symbol"`
 	Units int    `json:"units"`
+}
+
+// User Registration
+type User struct {
+	UserData UserData `json:"data,omitempty"`
+	ErrBody  ErrBody  `json:"error,omitempty"`
+}
+
+type UserData struct {
+	Token    string   `json:"token"`
+	Agent    Agent    `json:"agent"`
+	Contract Contract `json:"contract"`
+	Faction  Faction  `json:"faction"`
+	Ship     Ship     `json:"ship"`
+}
+
+type Contract struct {
+	Id             string `json:"id"`
+	Faction        string `json:"factionSymbol"`
+	Type           string `json:"type"`
+	Terms          Terms  `json:"terms"`
+	Accepted       bool   `json:"accepted"`
+	Fulfilled      bool   `json:"funfilled"`
+	Expires        string `json:"expiration"`
+	AcceptDeadline string `json:"deadlineToAccept"`
+}
+
+type Terms struct {
+	// Contract terms
+	Deadline string         `json:"deadline"`
+	Payment  map[string]int `json:"payment"`
+	Deliver  []Delivery     `json:"deliver"`
+}
+
+type Delivery struct {
+	// Desired contract material and progress.
+	Item           string `json:"tradeSymbol"`
+	Destination    string `json:"destinationSymbol"`
+	UnitsRequired  int    `json:"unitsRequired"`
+	UnitsFulfilled int    `json:"unitsFulfilled"`
+}
+
+type Faction struct {
+	Symbol       string              `json:"symbol"`
+	Name         string              `json:"name"`
+	Description  string              `json:"description"`
+	Headquarters string              `json:"headquarters"`
+	Traits       []map[string]string `json:"traits"`
+	IsRecruiting bool                `json:"isRecruiting"`
 }
