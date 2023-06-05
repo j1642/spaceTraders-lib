@@ -231,3 +231,12 @@ type Faction struct {
 	Traits       []map[string]string `json:"traits"`
 	IsRecruiting bool                `json:"isRecruiting"`
 }
+
+type ContractData struct {
+	Contract Contract `json:"data"`
+}
+
+type AllContracts struct {
+	Contracts []Contract     `json:"data"`
+	Meta      map[string]int `json:"meta"`
+}
