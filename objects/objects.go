@@ -2,7 +2,7 @@ package objects
 
 // Ship description.
 type DataShip struct {
-	Ship Ship `json:"data,omitempty"`
+	Ship Ship `json:"data"`
 }
 
 type Ship struct {
@@ -69,8 +69,8 @@ type Crew struct {
 }
 
 type FuelConsumed struct {
-	Amount    int    `json:"amount,omitempty"`
-	Timestamp string `json:"timestamp,omitempty"`
+	Amount    int    `json:"amount"`
+	Timestamp string `json:"timestamp"`
 }
 
 type Cargo struct {
@@ -234,6 +234,7 @@ type Faction struct {
 	IsRecruiting bool                `json:"isRecruiting"`
 }
 
+// Contract Parents
 type ContractData struct {
 	Contract Contract `json:"data"`
 }
