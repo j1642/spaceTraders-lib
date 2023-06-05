@@ -243,3 +243,13 @@ type AllContracts struct {
 	Contracts []Contract     `json:"data"`
 	Meta      map[string]int `json:"meta"`
 }
+
+// Travel
+type TravelData struct {
+	Travel Travel `json:"data"`
+}
+
+type Travel struct {
+	Nav  Nav              `json:"nav"`
+	Fuel OneIndentedField `json:"fuel"`
+}
