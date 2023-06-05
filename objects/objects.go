@@ -20,11 +20,11 @@ type Ship struct {
 }
 
 type Nav struct {
-	SystemSymbol   string   `json:"systemSymbol,omitempty"`
-	WaypointSymbol string   `json:"waypointSymbol,omitempty"`
-	Route          NavRoute `json:"route,omitempty"`
-	Arrival        string   `json:"arrival,omitempty"`
-	DepartureTime  string   `json:"departureTime,omitempty"`
+	SystemSymbol   string   `json:"systemSymbol"`
+	WaypointSymbol string   `json:"waypointSymbol"`
+	Route          NavRoute `json:"route"`
+	Status         string   `json:"status"`
+	FlightMode     string   `json:"flightMode"`
 }
 
 type OneIndentedField struct {
@@ -45,16 +45,18 @@ type OneIndentedField struct {
 }
 
 type NavRoute struct {
-	Departure   NavRouteLocation `json:"departure,omitempty"`
-	Destination NavRouteLocation `json:"destination,omitempty"`
+	Departure     NavRouteLocation `json:"departure"`
+	Destination   NavRouteLocation `json:"destination"`
+	Arrival       string           `json:"arrival"`
+	DepartureTime string           `json:"departureTime"`
 }
 
 type NavRouteLocation struct {
-	Symbol       string `json:"symbol,omitempty"`
-	Type         string `json:"type,omitempty"`
-	SystemSymbol string `json:"systemSymbol,omitempty"`
-	X            int    `json:"x,omitempty"`
-	Y            int    `json:"y,omitempty"`
+	Symbol       string `json:"symbol"`
+	Type         string `json:"type"`
+	SystemSymbol string `json:"systemSymbol"`
+	X            int    `json:"x"`
+	Y            int    `json:"y"`
 }
 
 type Crew struct {
