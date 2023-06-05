@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -122,9 +123,9 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 
 func dropOffMaterialAndReturn(ship, material string) {
 	// Go to drop off point
-	requests.TravelTo(ship, barrenMoon)
 	fmt.Println(ship, "moving to the drop-off")
-	time.Sleep(30 * time.Second)
+	trip := requests.TravelTo(ship, barrenMoon)
+	sleepDuringTravel(trip)
 	requests.DockShip(ship)
 	time.Sleep(1 * time.Second)
 
@@ -148,9 +149,9 @@ func dropOffMaterialAndReturn(ship, material string) {
 
 	// Return to mining location.
 	time.Sleep(1 * time.Second)
-	requests.TravelTo(ship, asteroidField)
 	fmt.Println(ship, "returning from the drop-off")
-	time.Sleep(30 * time.Second)
+	trip = requests.TravelTo(ship, asteroidField)
+	sleepDuringTravel(trip)
 }
 
 func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
@@ -180,8 +181,8 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 	au_amount, au_ok := cargoAmounts["GOLD_ORE"]
 	pt_amount, pt_ok := cargoAmounts["PLATINUM_ORE"]
 	if ag_ok || au_ok || pt_ok {
-		requests.TravelTo(ship, frozenMoon)
-		time.Sleep(15 * time.Second)
+		trip := requests.TravelTo(ship, frozenMoon)
+		sleepDuringTravel(trip)
 		requests.DockShip(ship)
 		time.Sleep(1 * time.Second)
 		//requests.ViewMarket(frozenMoon)
@@ -203,8 +204,8 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 	}
 
 	if nh3_amount, ok := cargoAmounts["AMMONIA_ICE"]; ok {
-		requests.TravelTo(ship, volcanicMoon)
-		time.Sleep(15 * time.Second)
+		trip := requests.TravelTo(ship, volcanicMoon)
+		sleepDuringTravel(trip)
 		requests.DockShip(ship)
 		time.Sleep(1 * time.Second)
 		if ok {
@@ -226,6 +227,27 @@ func sellCargoBesidesMaterial(ship, material string) {
 		}
 		time.Sleep(1 * time.Second)
 	}
+}
+
+func sleepDuringTravel(reply *bytes.Buffer) {
+	travelMsg := objects.TravelData{}
+	err := json.Unmarshal(reply.Bytes(), &travelMsg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	format := "2006-01-02T15:04:05.000Z"
+	start, err := time.Parse(format, travelMsg.Travel.Nav.Route.DepartureTime)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	end, err := time.Parse(format, travelMsg.Travel.Nav.Route.Arrival)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	time.Sleep(end.Sub(start))
 }
 
 func readMiningShipNames() []string {

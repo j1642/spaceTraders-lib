@@ -286,7 +286,6 @@ func TravelTo(ship, waypoint string) *bytes.Buffer {
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
 	reply := sendRequest(req)
-	fmt.Println(reply)
 
 	return reply
 }
