@@ -42,7 +42,7 @@ func gather() {
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 500; i++ {
-		requests.ExtractOre(ship, 10)
+		requests.ExtractOre(ship, 5)
 		time.Sleep(1 * time.Second)
 		requests.DockShip(ship)
 		time.Sleep(1 * time.Second)
@@ -51,24 +51,23 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 		requests.Orbit(ship)
 		time.Sleep(1 * time.Second)
 
-		//		shipData := requests.DescribeShip(ship).Ship
-		//		time.Sleep(1 * time.Second)
-		//		cargo := &shipData.Cargo
-		//        available := cargo.Capacity - cargo.Units
-		//		if shipData.Frame.Symbol == "FRAME_DRONE" ||
-		//			shipData.Frame.Symbol == "FRAME_MINER" {
-		//			transferCargoFromDrone(ship, cargo)
-		//			time.Sleep(1 * time.Second)
-		//			if cargo.Units < cargo.Capacity {
-		//				continue
-		//			}
-		//			fmt.Println(ship, "waiting to transfer cargo")
-		//			time.Sleep(130 * time.Second)
-		//			continue
-		//		} else if shipData.Frame.Symbol == "FRAME_FRIGATE" &&
-		//        available == 0 {
-		//			dropOffMaterialAndReturn(ship, material)
-		//		}
+		shipData := requests.DescribeShip(ship).Ship
+		time.Sleep(1 * time.Second)
+		cargo := &shipData.Cargo
+		available := cargo.Capacity - cargo.Units
+		if shipData.Frame.Symbol == "FRAME_DRONE" ||
+			shipData.Frame.Symbol == "FRAME_MINER" {
+			transferCargoFromDrone(ship, cargo)
+			time.Sleep(1 * time.Second)
+			if cargo.Units < cargo.Capacity {
+				continue
+			}
+			fmt.Println(ship, "waiting to transfer cargo")
+			time.Sleep(130 * time.Second)
+			continue
+		} else if shipData.Frame.Symbol == "FRAME_FRIGATE" && available < 3 {
+			dropOffMaterialAndReturn(ship, material)
+		}
 	}
 	wg.Done()
 }
@@ -123,15 +122,17 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 
 func dropOffMaterialAndReturn(ship, material string) {
 	// Go to drop off point
-	//requests.TravelTo(ship, hq)
-	//fmt.Println(ship, "moving to the drop-off")
-	//time.Sleep(30 * time.Second)
-	//requests.DockShip(ship)
-	//time.Sleep(1 * time.Second)
+	requests.TravelTo(ship, barrenMoon)
+	fmt.Println(ship, "moving to the drop-off")
+	time.Sleep(30 * time.Second)
+	requests.DockShip(ship)
+	time.Sleep(1 * time.Second)
 
 	// Drop off contract material.
-	//deliverMaterial(ship, material)
-	//time.Sleep(1 * time.Second)
+	requests.DeliverMaterial(ship, material, "clihsz0802xehs60dtjzkwetd")
+	time.Sleep(1 * time.Second)
+	requests.Orbit(ship)
+	time.Sleep(1 * time.Second)
 
 	// Sell additional materials.
 	cargo := requests.DescribeShip(ship).Ship.Cargo
@@ -142,8 +143,6 @@ func dropOffMaterialAndReturn(ship, material string) {
 	if amount, ok := cargoAmounts["ICE_WATER"]; ok {
 		requests.SellCargo(ship, "ICE_WATER", amount)
 	}
-	requests.Orbit(ship)
-	time.Sleep(1 * time.Second)
 
 	sellCargoOnMoons(ship, cargoAmounts)
 
@@ -159,12 +158,12 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 	cu_amount, cu_ok := cargoAmounts["COPPER_ORE"]
 	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
 	if cu_ok || al_ok {
-		requests.TravelTo(ship, barrenMoon)
-		time.Sleep(15 * time.Second)
+		//requests.TravelTo(ship, barrenMoon)
+		//time.Sleep(15 * time.Second)
 		requests.DockShip(ship)
 		time.Sleep(1 * time.Second)
-		requests.ViewMarket(barrenMoon)
-		time.Sleep(1 * time.Second)
+		//requests.ViewMarket(barrenMoon)
+		//time.Sleep(1 * time.Second)
 		if cu_ok {
 			requests.SellCargo(ship, "COPPER_ORE", cu_amount)
 			time.Sleep(1 * time.Second)
@@ -185,8 +184,8 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 		time.Sleep(15 * time.Second)
 		requests.DockShip(ship)
 		time.Sleep(1 * time.Second)
-		requests.ViewMarket(frozenMoon)
-		time.Sleep(1 * time.Second)
+		//requests.ViewMarket(frozenMoon)
+		//time.Sleep(1 * time.Second)
 		if ag_ok {
 			requests.SellCargo(ship, "SILVER_ORE", ag_amount)
 			time.Sleep(1 * time.Second)
@@ -222,7 +221,7 @@ func sellCargoBesidesMaterial(ship, material string) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix != "ANTI" && prefix != material[:4] {
+		if prefix == "ICE_" || prefix == "SILI" || prefix == "QUAR" || prefix == "DIAM" {
 			requests.SellCargo(ship, item.Symbol, item.Units)
 		}
 		time.Sleep(1 * time.Second)
