@@ -70,7 +70,7 @@ func TransferCargo(fromShip, toShip, material string, amount int) *bytes.Buffer 
 	return reply
 }
 
-func DeliverMaterial(ship, material, contractId string) {
+func DeliverMaterial(ship, material, contractId string) *bytes.Buffer {
 	var amount string
 	for _, item := range DescribeShip(ship).Ship.Cargo.Inventory {
 		if item.Symbol == material {
@@ -89,7 +89,10 @@ func DeliverMaterial(ship, material, contractId string) {
 
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	fmt.Println(sendRequest(req))
+	reply := sendRequest(req)
+	fmt.Println(reply)
+
+	return reply
 }
 
 func ViewJumpGate(waypoint string) {
@@ -166,10 +169,12 @@ func DescribeShip(ship string) objects.DataShip {
 	return data
 }
 
-func ViewContract(id string) {
+func ViewContract(id string) *bytes.Buffer {
 	url := strings.Join([]string{"https://api.spacetraders.io/v2/my/contracts/", id}, "")
 	req := makeRequest("GET", url, nil)
-	fmt.Println(sendRequest(req))
+	reply := sendRequest(req)
+	fmt.Println(reply)
+	return reply
 }
 
 func ViewServerStatus() {
@@ -271,7 +276,7 @@ func DockShip(ship string) {
 	}
 }
 
-func TravelTo(ship, waypoint string) {
+func TravelTo(ship, waypoint string) *bytes.Buffer {
 	jsonPieces := []string{`{"waypointSymbol": "`, waypoint, `"}`}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
 
@@ -280,7 +285,10 @@ func TravelTo(ship, waypoint string) {
 
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	fmt.Println(sendRequest(req))
+	reply := sendRequest(req)
+	fmt.Println(reply)
+
+	return reply
 }
 
 func ListMyShips() {
