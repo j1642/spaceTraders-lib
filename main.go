@@ -268,3 +268,31 @@ func readMiningShipNames() []string {
 	}
 	return split
 }
+
+func doNewUserBoilerplate(callsign string) {
+	// Creates a new user, saves the auth key, accepts the first contract, and
+	// refreshes the ship names file.
+	reply := requests.RegisterNewUser(callsign)
+	time.Sleep(1 * time.Second)
+	fmt.Println(reply)
+	registerMsg := objects.User{}
+	err := json.Unmarshal(reply.Bytes(), &registerMsg)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = os.WriteFile("secrets.txt", []byte(registerMsg.UserData.Token), 664)
+	if err != nil {
+		fmt.Println(registerMsg.UserData.Token)
+		log.Fatal(err)
+	}
+
+	requests.AcceptContract(registerMsg.UserData.Contract.Id)
+	time.Sleep(1 * time.Second)
+
+	err = os.WriteFile("miningDrones.txt", []byte(callsign+"-1"), 664)
+	if err != nil {
+		fmt.Println(registerMsg.UserData.Token)
+		log.Fatal(err)
+	}
+}
