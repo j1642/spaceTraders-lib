@@ -43,7 +43,7 @@ func gather() {
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 	for i := 0; i < 500; i++ {
-		requests.ExtractOre(ship, 5)
+		requests.ExtractOre(ship, 3)
 		time.Sleep(1 * time.Second)
 		requests.DockShip(ship)
 		time.Sleep(1 * time.Second)
@@ -64,9 +64,9 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 				continue
 			}
 			fmt.Println(ship, "waiting to transfer cargo")
-			time.Sleep(130 * time.Second)
+			time.Sleep(110 * time.Second)
 			continue
-		} else if shipData.Frame.Symbol == "FRAME_FRIGATE" && available < 3 {
+		} else if shipData.Frame.Symbol == "FRAME_FRIGATE" && available < 5 {
 			dropOffMaterialAndReturn(ship, material)
 		}
 	}
@@ -81,7 +81,9 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 			return
 		}
 		fmt.Println(drone, "waiting for transport (whole trip)")
-		time.Sleep(130 * time.Second)
+		time.Sleep(100 * time.Second)
+		transferCargoFromDrone(drone, droneCargo)
+		return
 	}
 
 	availableSpace := transport.Cargo.Capacity - transport.Cargo.Units
@@ -97,7 +99,6 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		}
 
 		reply := requests.TransferCargo(drone, miningShips[0], item.Symbol, amount)
-		fmt.Println(reply)
 		transferMsg := objects.Error{}
 		err := json.Unmarshal(reply.Bytes(), &transferMsg)
 		if err != nil {
@@ -106,7 +107,7 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		// Transport ship approaching but has not arrived.
 		if transferMsg.ErrBody.Code == 4214 {
 			fmt.Println(drone, "waiting for transport (return trip)")
-			time.Sleep(30 * time.Second)
+			time.Sleep(28 * time.Second)
 			requests.TransferCargo(drone, miningShips[0], item.Symbol, amount)
 		}
 
