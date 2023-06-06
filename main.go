@@ -125,25 +125,24 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 func dropOffMaterialAndReturn(ship, material string) {
 	// Go to drop off point
 	fmt.Println(ship, "moving to the drop-off")
-	trip := requests.TravelTo(ship, barrenMoon)
-	sleepDuringTravel(trip)
-	requests.DockShip(ship)
-	time.Sleep(1 * time.Second)
+	//trip := requests.TravelTo(ship, barrenMoon)
+	//sleepDuringTravel(trip)
+	//requests.DockShip(ship)
+	//time.Sleep(1 * time.Second)
 
 	// Drop off contract material.
-	requests.DeliverMaterial(ship, material, "clihsz0802xehs60dtjzkwetd")
+	/*requests.DeliverMaterial(ship, material, "clihsz0802xehs60dtjzkwetd")
 	time.Sleep(1 * time.Second)
 	requests.Orbit(ship)
 	time.Sleep(1 * time.Second)
+	*/
 
 	// Sell additional materials.
 	cargo := requests.DescribeShip(ship).Ship.Cargo
+	time.Sleep(1 * time.Second)
 	cargoAmounts := make(map[string]int)
 	for _, item := range cargo.Inventory {
 		cargoAmounts[item.Symbol] = item.Units
-	}
-	if amount, ok := cargoAmounts["ICE_WATER"]; ok {
-		requests.SellCargo(ship, "ICE_WATER", amount)
 	}
 
 	sellCargoOnMoons(ship, cargoAmounts)
@@ -151,7 +150,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 	// Return to mining location.
 	time.Sleep(1 * time.Second)
 	fmt.Println(ship, "returning from the drop-off")
-	trip = requests.TravelTo(ship, asteroidField)
+	trip := requests.TravelTo(ship, asteroidField)
 	sleepDuringTravel(trip)
 }
 
@@ -159,9 +158,10 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 	// Sell cargo to markets that generally pay the most.
 	cu_amount, cu_ok := cargoAmounts["COPPER_ORE"]
 	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
-	if cu_ok || al_ok {
-		//requests.TravelTo(ship, barrenMoon)
-		//time.Sleep(15 * time.Second)
+	fe_amount, fe_ok := cargoAmounts["IRON_ORE"]
+	if cu_ok || al_ok || fe_ok {
+		trip := requests.TravelTo(ship, barrenMoon)
+		sleepDuringTravel(trip)
 		requests.DockShip(ship)
 		time.Sleep(1 * time.Second)
 		//requests.ViewMarket(barrenMoon)
@@ -172,6 +172,10 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 		}
 		if al_ok {
 			requests.SellCargo(ship, "ALUMINUM_ORE", al_amount)
+			time.Sleep(1 * time.Second)
+		}
+		if fe_ok {
+			requests.SellCargo(ship, "IRON_ORE", fe_amount)
 			time.Sleep(1 * time.Second)
 		}
 		requests.Orbit(ship)
