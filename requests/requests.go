@@ -257,27 +257,30 @@ func ExtractOre(ship string, repeat int) {
 
 		resp := sendRequest(req)
 		body := readResponse(resp)
-		//body.WriteTo(os.Stdout)
 		extractMsg := objects.ExtractionData{}
 		err := json.Unmarshal(body.Bytes(), &extractMsg)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
-		//if extractMsg.ErrBody.Code != 0 {
-		//	time.Sleep(time.Second * time.Duration(extractMsg.ExtractBody.Cooldown.RemainingSeconds))
-		//	continue
-		//}
+
+		// Error code 4000: cooldownConflictError
+		// Error code 4236: shipNotInOrbitError
+		if extractMsg.ErrBody.Code == 4000 {
+			time.Sleep(time.Second *
+				time.Duration(extractMsg.ErrBody.Data.Cooldown.RemainingSeconds))
+			continue
+		} else if extractMsg.ErrBody.Code == 4236 {
+			time.Sleep(1 * time.Second)
+			Orbit(ship)
+			time.Sleep(1 * time.Second)
+			continue
+		}
 
 		cargo.Units += extractMsg.ExtractBody.Extraction.Yield.Units
 		fmt.Println(ship, "extracting...", "cargo", cargo.Units, "/", cargo.Capacity)
-		switch shipData.Frame.Symbol {
-		case "FRAME_FRIGATE":
-			time.Sleep(70 * time.Second)
-		case "FRAME_DRONE":
-			time.Sleep(70 * time.Second)
-		case "FRAME_MINER":
-			time.Sleep(80 * time.Second)
-		}
+
+		time.Sleep(time.Second *
+			time.Duration(extractMsg.ExtractBody.Cooldown.RemainingSeconds))
 	}
 }
 
