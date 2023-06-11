@@ -14,20 +14,25 @@ import (
 	"spacetraders/requests"
 )
 
-const barrenMoon string = "X1-HQ18-93722X"   // base metals
-const frozenMoon string = "X1-HQ18-53964F"   // precious metals
-const volcanicMoon string = "X1-HQ18-89363Z" // ammonia ice
+const barrenMoon string = "X1-KS52-61262Z"   // base metals market
+const volcanicMoon string = "X1-KS52-31553B" // ammonia ice market
+const frozenMoon string = ""
 
-const hq string = "X1-HQ18-11700D"
-const asteroidField string = "X1-HQ18-98695F"
-const shipyard string = "X1-HQ18-60817D"
+const hq string = "X1-KS52-07960X"
+const asteroidField string = "X1-KS52-51225B"
+const shipyard string = "X1-KS52-23717D"
 
 var miningShips []string = readMiningShipNames()
 
 func main() {
-	//requests.ViewMarket(asteroidField)
 	gather()
-	//requests.TravelTo("BAP-1", asteroidField)
+	/*
+	   requests.PurchaseShip("SHIP_MINING_DRONE", shipyard)
+	   time.Sleep(1 * time.Second)
+	   requests.Orbit("BAP-6")
+	   time.Sleep(1 * time.Second)
+	   fmt.Println(requests.TravelTo("BAP-6", asteroidField))
+	*/
 }
 
 func gather() {
@@ -35,7 +40,7 @@ func gather() {
 	wg := &sync.WaitGroup{}
 	for _, ship := range miningShips {
 		wg.Add(1)
-		go collectAndDeliverMaterial(ship, "IRON_ORE", wg)
+		go collectAndDeliverMaterial(ship, "ALUMINUM_ORE", wg)
 		time.Sleep(10 * time.Second)
 	}
 	wg.Wait()
@@ -81,7 +86,7 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 			return
 		}
 		fmt.Println(drone, "waiting for transport (whole trip)")
-		time.Sleep(100 * time.Second)
+		time.Sleep(110 * time.Second)
 		transferCargoFromDrone(drone, droneCargo)
 		return
 	}
@@ -107,7 +112,7 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		// Transport ship approaching but has not arrived.
 		if transferMsg.ErrBody.Code == 4214 {
 			fmt.Println(drone, "waiting for transport (return trip)")
-			time.Sleep(28 * time.Second)
+			time.Sleep(45 * time.Second)
 			requests.TransferCargo(drone, miningShips[0], item.Symbol, amount)
 		}
 
@@ -125,17 +130,16 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 func dropOffMaterialAndReturn(ship, material string) {
 	// Go to drop off point
 	fmt.Println(ship, "moving to the drop-off")
-	//trip := requests.TravelTo(ship, barrenMoon)
-	//sleepDuringTravel(trip)
-	//requests.DockShip(ship)
-	//time.Sleep(1 * time.Second)
+	trip := requests.TravelTo(ship, barrenMoon)
+	sleepDuringTravel(trip)
+	requests.DockShip(ship)
+	time.Sleep(1 * time.Second)
 
 	// Drop off contract material.
-	/*requests.DeliverMaterial(ship, material, "clihsz0802xehs60dtjzkwetd")
+	requests.DeliverMaterial(ship, material, "cliqep7yu02vvs60d74wj4eej")
 	time.Sleep(1 * time.Second)
 	requests.Orbit(ship)
 	time.Sleep(1 * time.Second)
-	*/
 
 	// Sell additional materials.
 	cargo := requests.DescribeShip(ship).Ship.Cargo
@@ -150,7 +154,7 @@ func dropOffMaterialAndReturn(ship, material string) {
 	// Return to mining location.
 	time.Sleep(1 * time.Second)
 	fmt.Println(ship, "returning from the drop-off")
-	trip := requests.TravelTo(ship, asteroidField)
+	trip = requests.TravelTo(ship, asteroidField)
 	sleepDuringTravel(trip)
 }
 
@@ -160,8 +164,10 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
 	fe_amount, fe_ok := cargoAmounts["IRON_ORE"]
 	if cu_ok || al_ok || fe_ok {
-		trip := requests.TravelTo(ship, barrenMoon)
-		sleepDuringTravel(trip)
+		/*trip := requests.TravelTo(ship, barrenMoon)
+		        fmt.Println(trip)
+				sleepDuringTravel(trip)
+		*/
 		requests.DockShip(ship)
 		time.Sleep(1 * time.Second)
 		//requests.ViewMarket(barrenMoon)
@@ -227,7 +233,7 @@ func sellCargoBesidesMaterial(ship, material string) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix == "ICE_" || prefix == "SILI" || prefix == "QUAR" || prefix == "DIAM" {
+		if prefix != "ALUM" {
 			requests.SellCargo(ship, item.Symbol, item.Units)
 		}
 		time.Sleep(1 * time.Second)
