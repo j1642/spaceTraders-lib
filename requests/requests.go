@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -27,7 +26,7 @@ func makeRequest(httpMethod, url string, msg []byte) *http.Request {
 		request, err = http.NewRequest(httpMethod, url, nil)
 	}
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	request.Header.Add("Authorization", auth)
 	return request
@@ -37,7 +36,7 @@ func sendRequest(request *http.Request) *http.Response {
 	// The response must be closed, whether by readResponse() or other means.
 	resp, err := client.Do(request)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	return resp
 }
@@ -45,13 +44,13 @@ func sendRequest(request *http.Request) *http.Response {
 func readResponse(resp *http.Response) *bytes.Buffer {
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	var out bytes.Buffer
@@ -173,7 +172,7 @@ func SellCargo(ship, item string, amount int) {
 
 	err := json.Unmarshal(body.Bytes(), &sale)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	fmt.Println(ship, "selling...", amount, item, "at",
 		sale.BuySell.Transaction.PricePerUnit, "for",
@@ -193,7 +192,7 @@ func DescribeShip(ship string) objects.DataShip {
 	var data objects.DataShip
 	err := json.Unmarshal(body.Bytes(), &data)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	return data
 }
@@ -292,7 +291,7 @@ func Orbit(ship string) {
 	resp := sendRequest(req)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}()
 
@@ -322,7 +321,7 @@ func DockShip(ship string) {
 	resp := sendRequest(req)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 	}()
 
@@ -407,7 +406,7 @@ func RegisterNewUser(callSign string) *bytes.Buffer {
 func readAuth() string {
 	key, err := os.ReadFile("secrets.txt")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	auth := fmt.Sprintf("Bearer %s", key)
 	auth = strings.ReplaceAll(auth, "\n", "")

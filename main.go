@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 	"sync"
@@ -107,7 +106,7 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		transferMsg := objects.Error{}
 		err := json.Unmarshal(reply.Bytes(), &transferMsg)
 		if err != nil {
-			log.Fatal(err)
+			panic(err)
 		}
 		// Transport ship approaching but has not arrived.
 		if transferMsg.ErrBody.Code == 4214 {
@@ -244,18 +243,18 @@ func sleepDuringTravel(reply *bytes.Buffer) {
 	travelMsg := objects.TravelData{}
 	err := json.Unmarshal(reply.Bytes(), &travelMsg)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	format := "2006-01-02T15:04:05.000Z"
 	start, err := time.Parse(format, travelMsg.Travel.Nav.Route.DepartureTime)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	end, err := time.Parse(format, travelMsg.Travel.Nav.Route.Arrival)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	time.Sleep(end.Sub(start))
@@ -264,7 +263,7 @@ func sleepDuringTravel(reply *bytes.Buffer) {
 func readMiningShipNames() []string {
 	names, err := os.ReadFile("miningDrones.txt")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	str := strings.TrimSpace(string(names))
 	split := strings.Split(str, "\n")
@@ -276,29 +275,30 @@ func readMiningShipNames() []string {
 }
 
 func doNewUserBoilerplate(callsign string) {
-	// Creates a new user, saves the auth key, accepts the first contract, and
-	// refreshes the ship names file.
+	// Creates a new user, saves the auth key, and refreshes the ship
+	// names file.
 	reply := requests.RegisterNewUser(callsign)
 	time.Sleep(1 * time.Second)
 	fmt.Println(reply)
 	registerMsg := objects.User{}
 	err := json.Unmarshal(reply.Bytes(), &registerMsg)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	err = os.WriteFile("secrets.txt", []byte(registerMsg.UserData.Token), 664)
 	if err != nil {
 		fmt.Println(registerMsg.UserData.Token)
-		log.Fatal(err)
+		panic(err)
 	}
 
-	requests.AcceptContract(registerMsg.UserData.Contract.Id)
-	time.Sleep(1 * time.Second)
+	// Error b/c auth var in requests is not updated.
+	//requests.AcceptContract(registerMsg.UserData.Contract.Id)
+	//time.Sleep(1 * time.Second)
 
 	err = os.WriteFile("miningDrones.txt", []byte(callsign+"-1"), 664)
 	if err != nil {
 		fmt.Println(registerMsg.UserData.Token)
-		log.Fatal(err)
+		panic(err)
 	}
 }
