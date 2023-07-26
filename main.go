@@ -28,9 +28,9 @@ func main() {
 	/*
 	   requests.PurchaseShip("SHIP_MINING_DRONE", shipyard)
 	   time.Sleep(1 * time.Second)
-	   requests.Orbit("BAP-6")
+	   requests.Orbit("USER-6")
 	   time.Sleep(1 * time.Second)
-	   fmt.Println(requests.TravelTo("BAP-6", asteroidField))
+	   fmt.Println(requests.TravelTo("USER-6", asteroidField))
 	*/
 }
 
@@ -132,6 +132,8 @@ func dropOffMaterialAndReturn(ship, material string) {
 	trip := requests.TravelTo(ship, barrenMoon)
 	sleepDuringTravel(trip)
 	requests.DockShip(ship)
+	time.Sleep(1 * time.Second)
+	requests.FulfillContract("cliqep7yu02vvs60d74wj4eej")
 	time.Sleep(1 * time.Second)
 
 	// Drop off contract material.
