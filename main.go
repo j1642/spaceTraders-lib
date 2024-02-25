@@ -75,6 +75,8 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup, ticker
 	wg.Done()
 }
 
+// Transfer cargo from a small, slow ship (usually a MINING_DRONE) to a faster,
+// larger transport ship
 func transferCargoFromDrone(drone string, droneCargo *objects.Cargo, ticker *time.Ticker) {
 	transport := requests.DescribeShip(miningShips[0], ticker).Ship
 	if transport.Nav.WaypointSymbol != asteroidField {
@@ -122,6 +124,7 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo, ticker *tim
 	}
 }
 
+// Travel, deliver contract deliverables, sell assorted resources, and return
 func dropOffMaterialAndReturn(ship, material string, ticker *time.Ticker) {
 	// Go to drop off point
 	fmt.Println(ship, "moving to the drop-off")
@@ -150,8 +153,9 @@ func dropOffMaterialAndReturn(ship, material string, ticker *time.Ticker) {
 	sleepDuringTravel(trip)
 }
 
+// Sell cargo to markets that generally pay the most. Locations are currently
+// found manually and hardcoded as constants
 func sellCargoOnMoons(ship string, cargoAmounts map[string]int, ticker *time.Ticker) {
-	// Sell cargo to markets that generally pay the most.
 	cu_amount, cu_ok := cargoAmounts["COPPER_ORE"]
 	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
 	fe_amount, fe_ok := cargoAmounts["IRON_ORE"]
@@ -208,6 +212,7 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int, ticker *time.Tic
 	}
 }
 
+// Sell all cargo in the ship's inventory, besides the hardcoded exceptions
 func sellCargoBesidesMaterial(ship, material string, ticker *time.Ticker) {
 	cargo := requests.DescribeShip(ship, ticker).Ship.Cargo.Inventory
 	for i := len(cargo) - 1; i >= 0; i-- {
@@ -219,6 +224,7 @@ func sellCargoBesidesMaterial(ship, material string, ticker *time.Ticker) {
 	}
 }
 
+// Tell a goroutine to sleep while travelling between locations
 func sleepDuringTravel(reply *bytes.Buffer) {
 	travelMsg := objects.TravelData{}
 	err := json.Unmarshal(reply.Bytes(), &travelMsg)
@@ -240,6 +246,7 @@ func sleepDuringTravel(reply *bytes.Buffer) {
 	time.Sleep(end.Sub(start))
 }
 
+// Read ships names from file so they can be assigned to their respective goroutines
 func readMiningShipNames() []string {
 	names, err := os.ReadFile("miningDrones.txt")
 	if err != nil {
