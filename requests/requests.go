@@ -34,14 +34,14 @@ func makeRequest(httpMethod, url string, msg []byte) *http.Request {
 
 func sendRequest(request *http.Request, ticker *time.Ticker) *http.Response {
 	// The response must be closed, whether by readResponse() or other means.
-    select {
-    case <-ticker.C:
-        resp, err := client.Do(request)
-        if err != nil {
-            panic(err)
-        }
-        return resp
-    }
+	select {
+	case <-ticker.C:
+		resp, err := client.Do(request)
+		if err != nil {
+			panic(err)
+		}
+		return resp
+	}
 }
 
 func readResponse(resp *http.Response) *bytes.Buffer {
@@ -67,7 +67,7 @@ func ViewShipsForSale(waypoint string, ticker *time.Ticker) {
 		waypoint[:7], "/waypoints/", waypoint, "/shipyard"}
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("GET", url, nil)
-    resp := sendRequest(req, ticker)
+	resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
 }
 
@@ -92,7 +92,7 @@ func TransferCargo(fromShip, toShip, material string, amount int, ticker *time.T
 
 func DeliverMaterial(ship, material, contractId string, ticker *time.Ticker) *bytes.Buffer {
 	var amount string
-	for _, item := range DescribeShip(ship).Ship.Cargo.Inventory {
+	for _, item := range DescribeShip(ship, ticker).Ship.Cargo.Inventory {
 		if item.Symbol == material {
 			amount = strconv.Itoa(item.Units)
 		}
@@ -153,7 +153,7 @@ func BuyCargo(ship, item string, amount int, ticker *time.Ticker) {
 func SellCargo(ship, item string, amount int, ticker *time.Ticker) {
 	// Set amount to -1 to sell all of the item.
 	if amount == -1 {
-		inventory := DescribeShip(ship).Ship.Cargo.Inventory
+		inventory := DescribeShip(ship, ticker).Ship.Cargo.Inventory
 		for _, material := range inventory {
 			if material.Symbol == item {
 				amount = material.Units
@@ -183,7 +183,7 @@ func SellCargo(ship, item string, amount int, ticker *time.Ticker) {
 		"credits:", sale.BuySell.Agent.Credits)
 }
 
-func DescribeShip(ship string, ticker *time.Ticker) objects.DataShip {
+func DescribeShip(ship string, ticker *time.Ticker) objects.ShipData {
 	// Lists cargo.
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship}
 	url := strings.Join(urlPieces, "")
@@ -192,7 +192,7 @@ func DescribeShip(ship string, ticker *time.Ticker) objects.DataShip {
 	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 
-	var data objects.DataShip
+	var data objects.ShipData
 	err := json.Unmarshal(body.Bytes(), &data)
 	if err != nil {
 		panic(err)
@@ -250,7 +250,7 @@ func ExtractOre(ship string, repeat int, ticker *time.Ticker) {
 	//req.Header.Set("Content-Type", "application/json")
 
 	for i := 0; i < repeat; i++ {
-		shipData := DescribeShip(ship).Ship
+		shipData := DescribeShip(ship, ticker).Ship
 		cargo := &shipData.Cargo
 		if cargo.Units == cargo.Capacity {
 			fmt.Println(ship, "cargo full")
@@ -272,9 +272,7 @@ func ExtractOre(ship string, repeat int, ticker *time.Ticker) {
 				time.Duration(extractMsg.ErrBody.Data.Cooldown.RemainingSeconds))
 			continue
 		} else if extractMsg.ErrBody.Code == 4236 {
-			time.Sleep(1 * time.Second)
-			Orbit(ship)
-			time.Sleep(1 * time.Second)
+			Orbit(ship, ticker)
 			continue
 		}
 
@@ -310,7 +308,7 @@ func RefuelShip(ship string, ticker *time.Ticker) {
 	fmt.Println(readResponse(resp))
 	time.Sleep(1 * time.Second)
 
-	shipDetails := DescribeShip(ship)
+	shipDetails := DescribeShip(ship, ticker)
 	fmt.Printf("%v refueling... %v/%v\n", ship,
 		shipDetails.Ship.Fuel.Current,
 		shipDetails.Ship.Fuel.Capacity)
@@ -331,9 +329,9 @@ func DockShip(ship string, ticker *time.Ticker) {
 	fmt.Println(ship, "docking...")
 	time.Sleep(1 * time.Second)
 
-	shipDetails := DescribeShip(ship)
+	shipDetails := DescribeShip(ship, ticker)
 	if shipDetails.Ship.Fuel.Current < shipDetails.Ship.Fuel.Capacity/2 {
-		RefuelShip(ship)
+		RefuelShip(ship, ticker)
 	}
 }
 
