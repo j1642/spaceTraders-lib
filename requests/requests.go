@@ -32,13 +32,16 @@ func makeRequest(httpMethod, url string, msg []byte) *http.Request {
 	return request
 }
 
-func sendRequest(request *http.Request) *http.Response {
+func sendRequest(request *http.Request, ticker *time.Ticker) *http.Response {
 	// The response must be closed, whether by readResponse() or other means.
-	resp, err := client.Do(request)
-	if err != nil {
-		panic(err)
-	}
-	return resp
+    select {
+    case <-ticker.C:
+        resp, err := client.Do(request)
+        if err != nil {
+            panic(err)
+        }
+        return resp
+    }
 }
 
 func readResponse(resp *http.Response) *bytes.Buffer {
@@ -59,16 +62,16 @@ func readResponse(resp *http.Response) *bytes.Buffer {
 	return &out
 }
 
-func ViewShipsForSale(waypoint string) {
+func ViewShipsForSale(waypoint string, ticker *time.Ticker) {
 	urlPieces := []string{"https://api.spacetraders.io/v2/systems/",
 		waypoint[:7], "/waypoints/", waypoint, "/shipyard"}
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("GET", url, nil)
-	resp := sendRequest(req)
+    resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
 }
 
-func TransferCargo(fromShip, toShip, material string, amount int) *bytes.Buffer {
+func TransferCargo(fromShip, toShip, material string, amount int, ticker *time.Ticker) *bytes.Buffer {
 	jsonPieces := []string{`{"shipSymbol": "`, toShip, `", "tradeSymbol": "`,
 		material, `", "units": "`, strconv.Itoa(amount), `"}`}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
@@ -79,7 +82,7 @@ func TransferCargo(fromShip, toShip, material string, amount int) *bytes.Buffer 
 
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 
 	fmt.Println(body)
@@ -87,7 +90,7 @@ func TransferCargo(fromShip, toShip, material string, amount int) *bytes.Buffer 
 	return body
 }
 
-func DeliverMaterial(ship, material, contractId string) *bytes.Buffer {
+func DeliverMaterial(ship, material, contractId string, ticker *time.Ticker) *bytes.Buffer {
 	var amount string
 	for _, item := range DescribeShip(ship).Ship.Cargo.Inventory {
 		if item.Symbol == material {
@@ -106,34 +109,34 @@ func DeliverMaterial(ship, material, contractId string) *bytes.Buffer {
 
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 	fmt.Println(body)
 
 	return body
 }
 
-func ViewJumpGate(waypoint string) {
+func ViewJumpGate(waypoint string, ticker *time.Ticker) {
 	url := strings.Join([]string{"https://api.spacetraders.io/v2/systems/",
 		waypoint[:7], "/waypoints/", waypoint, "/jump-gate"}, "")
 	req := makeRequest("GET", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 	fmt.Println(body)
 }
 
-func FulfillContract(contractId string) {
+func FulfillContract(contractId string, ticker *time.Ticker) {
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/contracts/",
 		contractId, "/fulfill"}
 	url := strings.Join(urlPieces, "")
 
 	req := makeRequest("POST", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 	fmt.Println(body)
 }
 
-func BuyCargo(ship, item string, amount int) {
+func BuyCargo(ship, item string, amount int, ticker *time.Ticker) {
 	jsonPieces := []string{"{\n", `"symbol": "`, item, "\",\n", `"units": "`, strconv.Itoa(amount), "\"\n}"}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
 
@@ -142,12 +145,12 @@ func BuyCargo(ship, item string, amount int) {
 
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 	fmt.Println(body)
 }
 
-func SellCargo(ship, item string, amount int) {
+func SellCargo(ship, item string, amount int, ticker *time.Ticker) {
 	// Set amount to -1 to sell all of the item.
 	if amount == -1 {
 		inventory := DescribeShip(ship).Ship.Cargo.Inventory
@@ -166,7 +169,7 @@ func SellCargo(ship, item string, amount int) {
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 	var sale objects.DataBuySell
 
@@ -180,13 +183,13 @@ func SellCargo(ship, item string, amount int) {
 		"credits:", sale.BuySell.Agent.Credits)
 }
 
-func DescribeShip(ship string) objects.DataShip {
+func DescribeShip(ship string, ticker *time.Ticker) objects.DataShip {
 	// Lists cargo.
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship}
 	url := strings.Join(urlPieces, "")
 
 	req := makeRequest("GET", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 
 	var data objects.DataShip
@@ -197,40 +200,40 @@ func DescribeShip(ship string) objects.DataShip {
 	return data
 }
 
-func ViewContract(id string) *bytes.Buffer {
+func ViewContract(id string, ticker *time.Ticker) *bytes.Buffer {
 	url := strings.Join([]string{"https://api.spacetraders.io/v2/my/contracts/", id}, "")
 	req := makeRequest("GET", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 	fmt.Println(body)
 	return body
 }
 
-func ViewServerStatus() {
+func ViewServerStatus(ticker *time.Ticker) {
 	url := "https://api.spacetraders.io/v2/"
 	req := makeRequest("GET", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 	fmt.Println(body)
 }
 
-func ViewMarket(waypoint string) {
+func ViewMarket(waypoint string, ticker *time.Ticker) {
 	urlPieces := []string{"https://api.spacetraders.io/v2/systems/",
 		waypoint[:7], "/waypoints/", waypoint, "/market"}
 	url := strings.Join(urlPieces, "")
 
 	req := makeRequest("GET", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 	fmt.Println(body)
 }
 
-func ConductSurvey(ship string) *bytes.Buffer {
+func ConductSurvey(ship string, ticker *time.Ticker) *bytes.Buffer {
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/survey"}
 	url := strings.Join(urlPieces, "")
 
 	req := makeRequest("POST", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 
 	fmt.Println(body)
@@ -238,7 +241,7 @@ func ConductSurvey(ship string) *bytes.Buffer {
 	return body
 }
 
-func ExtractOre(ship string, repeat int) {
+func ExtractOre(ship string, repeat int, ticker *time.Ticker) {
 	//jsonContent := []byte(`{"survey": "X1-ZA40-99095A-172ABE"}`)
 
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/extract"}
@@ -254,7 +257,7 @@ func ExtractOre(ship string, repeat int) {
 			return
 		}
 
-		resp := sendRequest(req)
+		resp := sendRequest(req, ticker)
 		body := readResponse(resp)
 		extractMsg := objects.ExtractionData{}
 		err := json.Unmarshal(body.Bytes(), &extractMsg)
@@ -283,12 +286,12 @@ func ExtractOre(ship string, repeat int) {
 	}
 }
 
-func Orbit(ship string) {
+func Orbit(ship string, ticker *time.Ticker) {
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/orbit"}
 	url := strings.Join(urlPieces, "")
 
 	req := makeRequest("POST", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			panic(err)
@@ -298,12 +301,12 @@ func Orbit(ship string) {
 	fmt.Println(ship, "orbiting...")
 }
 
-func RefuelShip(ship string) {
+func RefuelShip(ship string, ticker *time.Ticker) {
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/refuel"}
 	url := strings.Join(urlPieces, "")
 
 	req := makeRequest("POST", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
 	time.Sleep(1 * time.Second)
 
@@ -313,12 +316,12 @@ func RefuelShip(ship string) {
 		shipDetails.Ship.Fuel.Capacity)
 }
 
-func DockShip(ship string) {
+func DockShip(ship string, ticker *time.Ticker) {
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/dock"}
 	url := strings.Join(urlPieces, "")
 
 	req := makeRequest("POST", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
 			panic(err)
@@ -334,7 +337,7 @@ func DockShip(ship string) {
 	}
 }
 
-func TravelTo(ship, waypoint string) *bytes.Buffer {
+func TravelTo(ship, waypoint string, ticker *time.Ticker) *bytes.Buffer {
 	jsonPieces := []string{`{"waypointSymbol": "`, waypoint, `"}`}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
 
@@ -343,72 +346,71 @@ func TravelTo(ship, waypoint string) *bytes.Buffer {
 
 	req := makeRequest("POST", url, jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 
 	return readResponse(resp)
 }
 
-func ListMyShips() {
+func ListMyShips(ticker *time.Ticker) {
 	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/ships", nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
 }
 
-func PurchaseShip(shipType, waypoint string) {
+func PurchaseShip(shipType, waypoint string, ticker *time.Ticker) {
 	jsonPieces := []string{`{"shipType": "`, shipType,
 		`", "waypointSymbol": "`, waypoint, `"}`}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
 
 	req := makeRequest("POST", "https://api.spacetraders.io/v2/my/ships", jsonContent)
 	req.Header.Set("Content-Type", "application/json")
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
 }
 
-func ListWaypointsInSystem(system string) {
+func ListWaypointsInSystem(system string, ticker *time.Ticker) {
 	url := strings.Join(
 		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints"}, "")
 	req := makeRequest("GET", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
 }
 
-func ListWaypointsByType(system string, typ string) {
-    // types: PLANET, GAS_GIANT, MOON, ORBITAL_STATION,
-    // JUMP_GATE, ASTEROID_FIELD, ASTEROID, ENGINEERED_ASTEROID,
-    // ASTEROID_BASE, NEBULA, DEBRIS_FIELD, GRAVITY_WELL,
-    // ARTIFICIAL_GRAVITY_WELL, FUEL_STATION
+// types: PLANET, MOON, ORBITAL_STATION, ASTEROID_FIELD, ENGINEERED_ASTEROID,
+// ASTEROID, ASTEROID_BASE, GAS_GIANT, JUMP_GATE, NEBULA, DEBRIS_FIELD,
+// GRAVITY_WELL, ARTIFICIAL_GRAVITY_WELL, FUEL_STATION
+func ListWaypointsByType(system string, typ string, ticker *time.Ticker) {
 	url := strings.Join(
 		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints?type=", typ}, "")
 	req := makeRequest("GET", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
 }
 
-func ViewAgent() *http.Response {
+func ViewAgent(ticker *time.Ticker) *http.Response {
 	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/agent", nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 
 	fmt.Println(readResponse(resp))
 	return resp
 }
 
-func AcceptContract(contractId string) {
+func AcceptContract(contractId string, ticker *time.Ticker) {
 	url := strings.Join([]string{"https://api.spacetraders.io/v2/my/contracts/",
 		contractId, "/accept"}, "")
 	req := makeRequest("POST", url, nil)
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
 }
 
-func RegisterNewUser(callSign string) *bytes.Buffer {
+func RegisterNewUser(callSign string, ticker *time.Ticker) *bytes.Buffer {
 	jsonPieces := []string{`{"symbol": "`, callSign, `", "faction": "COSMIC"}`}
 	jsonContent := []byte(strings.Join(jsonPieces, ""))
 	req := makeRequest("POST", "https://api.spacetraders.io/v2/register", jsonContent)
 	req.Header.Set("Content-Type", "application/json")
 	// Remove invalidated authorization key from past server reset.
 	req.Header.Del("Authorization")
-	resp := sendRequest(req)
+	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
 
 	fmt.Println(body)

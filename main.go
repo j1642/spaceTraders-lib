@@ -17,53 +17,51 @@ const barrenMoon string = "X1-KS52-61262Z"   // base metals market
 const volcanicMoon string = "X1-KS52-31553B" // ammonia ice market
 const frozenMoon string = ""
 
-const hq string = "X1-KS52-07960X"
+const system string = "X1-MR34"
+const hq string = "X1-MR34-A1"
 const asteroidField string = "X1-KS52-51225B"
 const shipyard string = "X1-KS52-23717D"
+
+const engineeredAsteroid = "X1-MR34-DX5X"
 
 var miningShips []string = readMiningShipNames()
 
 func main() {
-	gather()
+	//requests.ViewServerStatus()
+	ticker := time.NewTicker(1100 * time.Millisecond)
+	requests.ListWaypointsByType(system, "PLANET", ticker)
+	//gather()
 	/*
 	   requests.PurchaseShip("SHIP_MINING_DRONE", shipyard)
-	   time.Sleep(1 * time.Second)
 	   requests.Orbit("USER-6")
-	   time.Sleep(1 * time.Second)
 	   fmt.Println(requests.TravelTo("USER-6", asteroidField))
 	*/
 }
 
-func gather() {
+func gather(ticker *time.Ticker) {
 	// TODO: add channel for survey target if it contains desirable resources.
 	wg := &sync.WaitGroup{}
 	for _, ship := range miningShips {
-		wg.Add(1)
-		go collectAndDeliverMaterial(ship, "ALUMINUM_ORE", wg)
-		time.Sleep(10 * time.Second)
+		go collectAndDeliverMaterial(ship, "ALUMINUM_ORE", wg, ticker)
 	}
 	wg.Wait()
+	ticker.Stop()
 }
 
-func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
+func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup, ticker *time.Ticker) {
+	wg.Add(1)
 	for i := 0; i < 500; i++ {
-		requests.ExtractOre(ship, 3)
-		time.Sleep(1 * time.Second)
-		requests.DockShip(ship)
-		time.Sleep(1 * time.Second)
-		sellCargoBesidesMaterial(ship, material)
-		time.Sleep(1 * time.Second)
-		requests.Orbit(ship)
-		time.Sleep(1 * time.Second)
+		requests.ExtractOre(ship, 3, ticker)
+		requests.DockShip(ship, ticker)
+		sellCargoBesidesMaterial(ship, material, ticker)
+		requests.Orbit(ship, ticker)
 
-		shipData := requests.DescribeShip(ship).Ship
-		time.Sleep(1 * time.Second)
+		shipData := requests.DescribeShip(ship, ticker).Ship
 		cargo := &shipData.Cargo
 		available := cargo.Capacity - cargo.Units
 		if shipData.Frame.Symbol == "FRAME_DRONE" ||
 			shipData.Frame.Symbol == "FRAME_MINER" {
-			transferCargoFromDrone(ship, cargo)
-			time.Sleep(1 * time.Second)
+			transferCargoFromDrone(ship, cargo, ticker)
 			if cargo.Units < cargo.Capacity {
 				continue
 			}
@@ -71,22 +69,21 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup) {
 			time.Sleep(110 * time.Second)
 			continue
 		} else if shipData.Frame.Symbol == "FRAME_FRIGATE" && available < 5 {
-			dropOffMaterialAndReturn(ship, material)
+			dropOffMaterialAndReturn(ship, material, ticker)
 		}
 	}
 	wg.Done()
 }
 
-func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
-	transport := requests.DescribeShip(miningShips[0]).Ship
-	time.Sleep(1 * time.Second)
+func transferCargoFromDrone(drone string, droneCargo *objects.Cargo, ticker *time.Ticker) {
+	transport := requests.DescribeShip(miningShips[0], ticker).Ship
 	if transport.Nav.WaypointSymbol != asteroidField {
 		if float64(droneCargo.Units)/float64(droneCargo.Capacity) < 0.8 {
 			return
 		}
 		fmt.Println(drone, "waiting for transport (whole trip)")
 		time.Sleep(110 * time.Second)
-		transferCargoFromDrone(drone, droneCargo)
+		transferCargoFromDrone(drone, droneCargo, ticker)
 		return
 	}
 
@@ -102,7 +99,7 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 			amount = item.Units
 		}
 
-		reply := requests.TransferCargo(drone, miningShips[0], item.Symbol, amount)
+		reply := requests.TransferCargo(drone, miningShips[0], item.Symbol, amount, ticker)
 		transferMsg := objects.Error{}
 		err := json.Unmarshal(reply.Bytes(), &transferMsg)
 		if err != nil {
@@ -112,13 +109,12 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 		if transferMsg.ErrBody.Code == 4214 {
 			fmt.Println(drone, "waiting for transport (return trip)")
 			time.Sleep(45 * time.Second)
-			requests.TransferCargo(drone, miningShips[0], item.Symbol, amount)
+			requests.TransferCargo(drone, miningShips[0], item.Symbol, amount, ticker)
 		}
 
 		// Bookkeeping instead of making another HTTP request.
-		// Lets calling func know to continue or wait to transfer cargo later.
+		// Lets the calling func know to continue mining or wait to transfer cargo
 		droneCargo.Units -= amount
-		time.Sleep(1 * time.Second)
 		if amount == availableSpace {
 			return
 		}
@@ -126,40 +122,35 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo) {
 	}
 }
 
-func dropOffMaterialAndReturn(ship, material string) {
+func dropOffMaterialAndReturn(ship, material string, ticker *time.Ticker) {
 	// Go to drop off point
 	fmt.Println(ship, "moving to the drop-off")
-	trip := requests.TravelTo(ship, barrenMoon)
+	trip := requests.TravelTo(ship, barrenMoon, ticker)
 	sleepDuringTravel(trip)
-	requests.DockShip(ship)
-	time.Sleep(1 * time.Second)
-	requests.FulfillContract("cliqep7yu02vvs60d74wj4eej")
-	time.Sleep(1 * time.Second)
+
+	requests.DockShip(ship, ticker)
+	requests.FulfillContract("cliqep7yu02vvs60d74wj4eej", ticker)
 
 	// Drop off contract material.
-	requests.DeliverMaterial(ship, material, "cliqep7yu02vvs60d74wj4eej")
-	time.Sleep(1 * time.Second)
-	requests.Orbit(ship)
-	time.Sleep(1 * time.Second)
+	requests.DeliverMaterial(ship, material, "cliqep7yu02vvs60d74wj4eej", ticker)
+	requests.Orbit(ship, ticker)
 
 	// Sell additional materials.
-	cargo := requests.DescribeShip(ship).Ship.Cargo
-	time.Sleep(1 * time.Second)
+	cargo := requests.DescribeShip(ship, ticker).Ship.Cargo
 	cargoAmounts := make(map[string]int)
 	for _, item := range cargo.Inventory {
 		cargoAmounts[item.Symbol] = item.Units
 	}
 
-	sellCargoOnMoons(ship, cargoAmounts)
+	sellCargoOnMoons(ship, cargoAmounts, ticker)
 
 	// Return to mining location.
-	time.Sleep(1 * time.Second)
+	trip = requests.TravelTo(ship, asteroidField, ticker)
 	fmt.Println(ship, "returning from the drop-off")
-	trip = requests.TravelTo(ship, asteroidField)
 	sleepDuringTravel(trip)
 }
 
-func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
+func sellCargoOnMoons(ship string, cargoAmounts map[string]int, ticker *time.Ticker) {
 	// Sell cargo to markets that generally pay the most.
 	cu_amount, cu_ok := cargoAmounts["COPPER_ORE"]
 	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
@@ -169,75 +160,62 @@ func sellCargoOnMoons(ship string, cargoAmounts map[string]int) {
 		        fmt.Println(trip)
 				sleepDuringTravel(trip)
 		*/
-		requests.DockShip(ship)
-		time.Sleep(1 * time.Second)
+		requests.DockShip(ship, ticker)
 		//requests.ViewMarket(barrenMoon)
-		//time.Sleep(1 * time.Second)
 		if cu_ok {
-			requests.SellCargo(ship, "COPPER_ORE", cu_amount)
-			time.Sleep(1 * time.Second)
+			requests.SellCargo(ship, "COPPER_ORE", cu_amount, ticker)
 		}
 		if al_ok {
-			requests.SellCargo(ship, "ALUMINUM_ORE", al_amount)
-			time.Sleep(1 * time.Second)
+			requests.SellCargo(ship, "ALUMINUM_ORE", al_amount, ticker)
 		}
 		if fe_ok {
-			requests.SellCargo(ship, "IRON_ORE", fe_amount)
-			time.Sleep(1 * time.Second)
+			requests.SellCargo(ship, "IRON_ORE", fe_amount, ticker)
 		}
-		requests.Orbit(ship)
-		time.Sleep(1 * time.Second)
+		requests.Orbit(ship, ticker)
 	}
 
 	ag_amount, ag_ok := cargoAmounts["SILVER_ORE"]
 	au_amount, au_ok := cargoAmounts["GOLD_ORE"]
 	pt_amount, pt_ok := cargoAmounts["PLATINUM_ORE"]
 	if ag_ok || au_ok || pt_ok {
-		trip := requests.TravelTo(ship, frozenMoon)
+		trip := requests.TravelTo(ship, frozenMoon, ticker)
 		sleepDuringTravel(trip)
-		requests.DockShip(ship)
-		time.Sleep(1 * time.Second)
+		requests.DockShip(ship, ticker)
 		//requests.ViewMarket(frozenMoon)
-		//time.Sleep(1 * time.Second)
 		if ag_ok {
-			requests.SellCargo(ship, "SILVER_ORE", ag_amount)
-			time.Sleep(1 * time.Second)
+			select {
+			case <-ticker.C:
+				requests.SellCargo(ship, "SILVER_ORE", ag_amount, ticker)
+			}
 		}
 		if au_ok {
-			requests.SellCargo(ship, "GOLD_ORE", au_amount)
-			time.Sleep(1 * time.Second)
+			requests.SellCargo(ship, "GOLD_ORE", au_amount, ticker)
 		}
 		if pt_ok {
-			requests.SellCargo(ship, "PLATINUM_ORE", pt_amount)
-			time.Sleep(1 * time.Second)
+			requests.SellCargo(ship, "PLATINUM_ORE", pt_amount, ticker)
 		}
-		requests.Orbit(ship)
-		time.Sleep(1 * time.Second)
+		requests.Orbit(ship, ticker)
 	}
 
 	if nh3_amount, ok := cargoAmounts["AMMONIA_ICE"]; ok {
-		trip := requests.TravelTo(ship, volcanicMoon)
+		trip := requests.TravelTo(ship, volcanicMoon, ticker)
 		sleepDuringTravel(trip)
-		requests.DockShip(ship)
-		time.Sleep(1 * time.Second)
+		requests.DockShip(ship, ticker)
 		if ok {
-			requests.SellCargo(ship, "AMMONIA_ICE", nh3_amount)
-			time.Sleep(1 * time.Second)
+			requests.SellCargo(ship, "AMMONIA_ICE", nh3_amount, ticker)
 		}
-		requests.Orbit(ship)
-		time.Sleep(1 * time.Second)
+		requests.Orbit(ship, ticker)
 	}
 }
 
-func sellCargoBesidesMaterial(ship, material string) {
-	cargo := requests.DescribeShip(ship).Ship.Cargo.Inventory
+func sellCargoBesidesMaterial(ship, material string, ticker *time.Ticker) {
+	cargo := requests.DescribeShip(ship, ticker).Ship.Cargo.Inventory
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
 		if prefix != "ALUM" {
-			requests.SellCargo(ship, item.Symbol, item.Units)
+			requests.SellCargo(ship, item.Symbol, item.Units, ticker)
 		}
-		time.Sleep(1 * time.Second)
 	}
 }
 
@@ -276,11 +254,9 @@ func readMiningShipNames() []string {
 	return split
 }
 
-func doNewUserBoilerplate(callsign string) {
-	// Creates a new user, saves the auth key, and refreshes the ship
-	// names file.
-	reply := requests.RegisterNewUser(callsign)
-	time.Sleep(1 * time.Second)
+// Creates a new user, saves the auth key, and refreshes the ship names files.
+func doNewUserBoilerplate(callsign string, ticker *time.Ticker) {
+	reply := requests.RegisterNewUser(callsign, ticker)
 	fmt.Println(reply)
 	registerMsg := objects.User{}
 	err := json.Unmarshal(reply.Bytes(), &registerMsg)
@@ -296,9 +272,14 @@ func doNewUserBoilerplate(callsign string) {
 
 	// Error b/c auth var in requests is not updated.
 	//requests.AcceptContract(registerMsg.UserData.Contract.Id)
-	//time.Sleep(1 * time.Second)
 
 	err = os.WriteFile("miningDrones.txt", []byte(callsign+"-1"), 664)
+	if err != nil {
+		fmt.Println(registerMsg.UserData.Token)
+		panic(err)
+	}
+
+	err = os.WriteFile("probes.txt", []byte(callsign+"-2"), 664)
 	if err != nil {
 		fmt.Println(registerMsg.UserData.Token)
 		panic(err)
