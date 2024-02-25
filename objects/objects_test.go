@@ -8,7 +8,7 @@ import (
 // These tests do not seem authoritative. They often do not break when a
 // field is removed.
 
-func TestDataShip(t *testing.T) {
+func TestShipData(t *testing.T) {
 	jsonIn := `{
     "data": {
         "symbol": "A",
@@ -133,7 +133,7 @@ func TestDataShip(t *testing.T) {
         }
     }
 }`
-	var data DataShip
+	var data ShipData
 	err := json.Unmarshal([]byte(jsonIn), &data)
 	if err != nil {
 		t.Fatal("TestDataShip():", err)

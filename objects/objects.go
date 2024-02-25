@@ -219,6 +219,26 @@ type UserData struct {
 	Ship     Ship     `json:"ship"`
 }
 
+type Waypoints struct {
+	Data []Waypoint     `json:"data"`
+	Meta map[string]int `json:"meta,omitempty"`
+}
+type Waypoint struct {
+	System   string              `json:"systemSymbol"`
+	Symbol   string              `json:"symbol"`
+	Type     string              `json:"type"`
+	X        int                 `json:"x"`
+	Y        int                 `json:"y"`
+	Orbitals []map[string]string `json:"orbitals"`
+	// Traits include MARKETPLACE, SHIPYARD
+	Traits              []map[string]string `json:"traits"`
+	Modifiers           []map[string]string `json:"modifiers"`
+	Chart               map[string]string   `json:"chart"`
+	Faction             map[string]string   `json:"faction,omitempty"`
+	Orbits              string              `json:"orbits,omitempty"`
+	IsUnderConstruction bool                `json:"isUnderConstruction"`
+}
+
 // Non-alphabetical, general
 
 type OneIndentedField struct {
