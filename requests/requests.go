@@ -97,7 +97,6 @@ func DeliverMaterial(ship, material, contractId string, ticker *time.Ticker) *by
 			amount = strconv.Itoa(item.Units)
 		}
 	}
-	time.Sleep(1 * time.Second)
 	jsonStrs := []string{`{"shipSymbol":"`, ship, `",`,
 		`"tradeSymbol": "`, material, `",`,
 		`"units": "`, amount, `"}`}
@@ -306,7 +305,6 @@ func RefuelShip(ship string, ticker *time.Ticker) {
 	req := makeRequest("POST", url, nil)
 	resp := sendRequest(req, ticker)
 	fmt.Println(readResponse(resp))
-	time.Sleep(1 * time.Second)
 
 	shipDetails := DescribeShip(ship, ticker)
 	fmt.Printf("%v refueling... %v/%v\n", ship,
@@ -327,7 +325,6 @@ func DockShip(ship string, ticker *time.Ticker) {
 	}()
 
 	fmt.Println(ship, "docking...")
-	time.Sleep(1 * time.Second)
 
 	shipDetails := DescribeShip(ship, ticker)
 	if shipDetails.Ship.Fuel.Current < shipDetails.Ship.Fuel.Capacity/2 {
@@ -377,12 +374,15 @@ func ListWaypointsInSystem(system string, ticker *time.Ticker) {
 // types: PLANET, MOON, ORBITAL_STATION, ASTEROID_FIELD, ENGINEERED_ASTEROID,
 // ASTEROID, ASTEROID_BASE, GAS_GIANT, JUMP_GATE, NEBULA, DEBRIS_FIELD,
 // GRAVITY_WELL, ARTIFICIAL_GRAVITY_WELL, FUEL_STATION
-func ListWaypointsByType(system string, typ string, ticker *time.Ticker) {
+func ListWaypointsByType(system string, typ string, ticker *time.Ticker) *bytes.Buffer {
 	url := strings.Join(
 		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints?type=", typ}, "")
 	req := makeRequest("GET", url, nil)
 	resp := sendRequest(req, ticker)
-	fmt.Println(readResponse(resp))
+	body := readResponse(resp)
+
+	fmt.Println(body)
+	return body
 }
 
 func ViewAgent(ticker *time.Ticker) *http.Response {
