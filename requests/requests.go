@@ -373,6 +373,18 @@ func ListWaypointsInSystem(system string) {
 	fmt.Println(readResponse(resp))
 }
 
+func ListWaypointsByType(system string, typ string) {
+    // types: PLANET, GAS_GIANT, MOON, ORBITAL_STATION,
+    // JUMP_GATE, ASTEROID_FIELD, ASTEROID, ENGINEERED_ASTEROID,
+    // ASTEROID_BASE, NEBULA, DEBRIS_FIELD, GRAVITY_WELL,
+    // ARTIFICIAL_GRAVITY_WELL, FUEL_STATION
+	url := strings.Join(
+		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints?type=", typ}, "")
+	req := makeRequest("GET", url, nil)
+	resp := sendRequest(req)
+	fmt.Println(readResponse(resp))
+}
+
 func ViewAgent() *http.Response {
 	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/agent", nil)
 	resp := sendRequest(req)
