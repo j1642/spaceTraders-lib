@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"sync"
@@ -189,29 +190,42 @@ func dropOffMaterialAndReturn(ship, material string, ticker *time.Ticker) {
 		sleepDuringTravel(trip)
 		return
 	}
+
 	// Go to drop off point
 	fmt.Println(ship, "moving to the drop-off")
 	trip := requests.TravelTo(ship, contractDestination, ticker)
 	sleepDuringTravel(trip)
 
-	requests.DockShip(ship, ticker)
-	// TODO: check if contract is ready to be fulfilled first
-	//requests.FulfillContract(contractID, ticker)
-
 	// Drop off contract material.
-
-	if cargoAmounts[material] > 0 {
-		requests.DeliverMaterial(ship, material, contractID, ticker)
-	}
+	requests.DockShip(ship, ticker)
+	/*
+		if cargoAmounts[material] > 0 {
+	        delivery := requests.DeliverMaterial(ship, material, contractID, ticker)
+	        // TODO: this is probably broken
+	        error := objects.Error{}
+	        err := json.Unmarshal(delivery.Bytes(), &error)
+	        if err != nil {
+	            panic("")
+	        }
+	        if error.ErrBody.Code == 4509 {
+	            // Error 4509: Contract terms met, cannot deliver more deliverables
+	            requests.FulfillContract(contractID, ticker)
+	        }
+		}
+	*/
 
 	fe_ore_amount, fe_ok := cargoAmounts["IRON_ORE"]
 	al_ore_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
-	if fe_ok || al_ok {
+	cu_ore_amount, cu_ok := cargoAmounts["COPPER_ORE"]
+	if fe_ok || al_ok || cu_ok {
 		if fe_ok {
 			requests.SellCargo(ship, "IRON_ORE", fe_ore_amount, ticker)
 		}
 		if al_ok {
 			requests.SellCargo(ship, "ALUMINUM_ORE", al_ore_amount, ticker)
+		}
+		if cu_ok {
+			requests.SellCargo(ship, "COPPER_ORE", cu_ore_amount, ticker)
 		}
 	}
 
@@ -261,7 +275,7 @@ func sellCargoBesidesMaterial(ship, material string, ticker *time.Ticker) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix != "COPP" {
+		if prefix != "xxxx" {
 			requests.SellCargo(ship, item.Symbol, item.Units, ticker)
 		}
 	}
@@ -278,7 +292,8 @@ func sleepDuringTravel(reply *bytes.Buffer) {
 	format := "2006-01-02T15:04:05.000Z"
 	start, err := time.Parse(format, travelMsg.Travel.Nav.Route.DepartureTime)
 	if err != nil {
-		panic(err)
+		log.Println("Failed to parse time: likely trying to travel from/to the same place")
+		return
 	}
 
 	end, err := time.Parse(format, travelMsg.Travel.Nav.Route.Arrival)
