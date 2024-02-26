@@ -127,10 +127,10 @@ type FuelConsumed struct {
 	Timestamp string `json:"timestamp"`
 }
 
-type Market struct {
-	MarketBody MarketBody `json:"data"`
+type MarketData struct {
+	Market Market `json:"data"`
 }
-type MarketBody struct {
+type Market struct {
 	Symbol       string        `json:"symbol"`
 	Imports      []CargoItem   `json:"imports"`
 	Exports      []CargoItem   `json:"exports"`

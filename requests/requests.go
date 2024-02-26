@@ -217,7 +217,7 @@ func ViewServerStatus(ticker *time.Ticker) {
 	fmt.Println(body)
 }
 
-func ViewMarket(waypoint string, ticker *time.Ticker) {
+func ViewMarket(waypoint string, ticker *time.Ticker) *bytes.Buffer {
 	urlPieces := []string{"https://api.spacetraders.io/v2/systems/",
 		waypoint[:7], "/waypoints/", waypoint, "/market"}
 	url := strings.Join(urlPieces, "")
@@ -225,7 +225,9 @@ func ViewMarket(waypoint string, ticker *time.Ticker) {
 	req := makeRequest("GET", url, nil)
 	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
+
 	fmt.Println(body)
+	return body
 }
 
 func ConductSurvey(ship string, ticker *time.Ticker) *bytes.Buffer {
