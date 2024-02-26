@@ -199,6 +199,7 @@ func DescribeShip(ship string, ticker *time.Ticker) objects.ShipData {
 	return data
 }
 
+// To view all contracts, enter "" as ID
 func ViewContract(id string, ticker *time.Ticker) *bytes.Buffer {
 	url := strings.Join([]string{"https://api.spacetraders.io/v2/my/contracts/", id}, "")
 	req := makeRequest("GET", url, nil)

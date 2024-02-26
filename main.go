@@ -13,39 +13,89 @@ import (
 	"spacetraders/requests"
 )
 
-const barrenMoon string = "X1-KS52-61262Z"   // base metals market
-const volcanicMoon string = "X1-KS52-31553B" // ammonia ice market
-const frozenMoon string = ""
+// const fancyImporter string = "X1-BD74-H47" // imports precious stones, gems, Au/Ag BARS (not ore)
+const contractDestination string = "X1-BD74-H44" // imports ores: Fe, Al, Cu
+const exchangePlace = "X1-BD74-H46"              // moon, exchanges both ices, q sand, Si crystals
+const system string = "X1-BD74"
+const hq string = "X1-BD74-A1"
 
-const system string = "X1-MR34"
-const hq string = "X1-MR34-A1"
-const asteroidField string = "X1-KS52-51225B"
-const shipyard string = "X1-KS52-23717D"
+const shipyard string = "X1-BD74-C35" // seems to always be an orbital station
 
-const engineeredAsteroid = "X1-MR34-DX5X"
+const engineeredAsteroid string = "X1-BD74-DE5F"
+const contractID string = "clt1v2rv100whs60cahif98q1"
 
 var miningShips []string = readMiningShipNames()
 
+// Feb 25 - Probe costs 21k, gas mining drone costs 32k
 func main() {
-	//requests.ViewServerStatus()
-	ticker := time.NewTicker(1100 * time.Millisecond)
-	requests.ListWaypointsByType(system, "PLANET", ticker)
-	//gather()
+	ticker := time.NewTicker(2050 * time.Millisecond)
+	gather("COPPER_ORE", ticker)
 	/*
 	   requests.PurchaseShip("SHIP_MINING_DRONE", shipyard)
 	   requests.Orbit("USER-6")
-	   fmt.Println(requests.TravelTo("USER-6", asteroidField))
+	   fmt.Println(requests.TravelTo("USER-6", engineeredAsteroid))
 	*/
 }
 
-func gather(ticker *time.Ticker) {
-	// TODO: add channel for survey target if it contains desirable resources.
-	wg := &sync.WaitGroup{}
-	for _, ship := range miningShips {
-		go collectAndDeliverMaterial(ship, "ALUMINUM_ORE", wg, ticker)
+func investigateMarkets(system string, ticker *time.Ticker) {
+	//sites_of_interest := []string{"PLANET", "MOON", "ORBITAL_STATION"}
+	sites_of_interest := []string{"FUEL_STATION"}
+	real_stdout := os.Stdout
+	_, w, _ := os.Pipe()
+	os.Stdout = w
+
+	i := 0
+	for _, site_type := range sites_of_interest {
+		sites := requests.ListWaypointsByType(system, site_type, ticker)
+
+		waypoints := objects.Waypoints{}
+		err := json.Unmarshal(sites.Bytes(), &waypoints)
+		if err != nil {
+			panic(err)
+		}
+
+		for _, site := range waypoints.Data {
+			for _, trait := range site.Traits {
+				if trait["symbol"] == "MARKETPLACE" {
+					os.Stdout = real_stdout
+					fmt.Println(i, site.Symbol, site.Type, trait["name"])
+					requests.ViewMarket(site.Symbol, ticker)
+					os.Stdout = w
+				}
+			}
+			i += 1
+		}
 	}
-	wg.Wait()
-	ticker.Stop()
+	os.Stdout = real_stdout
+}
+
+func gather(material string, ticker *time.Ticker) {
+	// TODO: add channel for survey target if it contains desirable resources.
+	for {
+		ship := miningShips[0]
+		requests.ExtractOre(ship, 3, ticker)
+		shipData := requests.DescribeShip(ship, ticker).Ship
+		fuelPercent := float64(shipData.Fuel.Current) / float64(shipData.Fuel.Capacity)
+		if fuelPercent < 0.5 {
+			requests.RefuelShip(ship, ticker)
+		}
+		cargo := &shipData.Cargo
+		available := cargo.Capacity - cargo.Units
+		if available == 0 {
+			for _, item := range cargo.Inventory {
+				fmt.Println(item.Units, item.Symbol)
+			}
+			dropOffMaterialAndReturn(ship, material, ticker)
+		}
+	}
+	/*
+		wg := &sync.WaitGroup{}
+		for _, ship := range miningShips {
+			//go collectAndDeliverMaterial(ship, "COPPER_ORE", wg, ticker)
+		}
+		wg.Wait()
+		ticker.Stop()
+	*/
 }
 
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup, ticker *time.Ticker) {
@@ -79,7 +129,7 @@ func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup, ticker
 // larger transport ship
 func transferCargoFromDrone(drone string, droneCargo *objects.Cargo, ticker *time.Ticker) {
 	transport := requests.DescribeShip(miningShips[0], ticker).Ship
-	if transport.Nav.WaypointSymbol != asteroidField {
+	if transport.Nav.WaypointSymbol != engineeredAsteroid {
 		if float64(droneCargo.Units)/float64(droneCargo.Capacity) < 0.8 {
 			return
 		}
@@ -126,29 +176,51 @@ func transferCargoFromDrone(drone string, droneCargo *objects.Cargo, ticker *tim
 
 // Travel, deliver contract deliverables, sell assorted resources, and return
 func dropOffMaterialAndReturn(ship, material string, ticker *time.Ticker) {
-	// Go to drop off point
-	fmt.Println(ship, "moving to the drop-off")
-	trip := requests.TravelTo(ship, barrenMoon, ticker)
-	sleepDuringTravel(trip)
-
-	requests.DockShip(ship, ticker)
-	requests.FulfillContract("cliqep7yu02vvs60d74wj4eej", ticker)
-
-	// Drop off contract material.
-	requests.DeliverMaterial(ship, material, "cliqep7yu02vvs60d74wj4eej", ticker)
-	requests.Orbit(ship, ticker)
-
-	// Sell additional materials.
 	cargo := requests.DescribeShip(ship, ticker).Ship.Cargo
 	cargoAmounts := make(map[string]int)
 	for _, item := range cargo.Inventory {
 		cargoAmounts[item.Symbol] = item.Units
 	}
+	if cargoAmounts[material] == 0 && cargoAmounts["IRON_ORE"] == 0 &&
+		cargoAmounts["ALUMINUM_ORE"] == 0 {
+		sellCargoOnMoons(ship, cargoAmounts, ticker)
+		trip := requests.TravelTo(ship, engineeredAsteroid, ticker)
+		fmt.Println(ship, "returning from exchange place")
+		sleepDuringTravel(trip)
+		return
+	}
+	// Go to drop off point
+	fmt.Println(ship, "moving to the drop-off")
+	trip := requests.TravelTo(ship, contractDestination, ticker)
+	sleepDuringTravel(trip)
 
+	requests.DockShip(ship, ticker)
+	// TODO: check if contract is ready to be fulfilled first
+	//requests.FulfillContract(contractID, ticker)
+
+	// Drop off contract material.
+
+	if cargoAmounts[material] > 0 {
+		requests.DeliverMaterial(ship, material, contractID, ticker)
+	}
+
+	fe_ore_amount, fe_ok := cargoAmounts["IRON_ORE"]
+	al_ore_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
+	if fe_ok || al_ok {
+		if fe_ok {
+			requests.SellCargo(ship, "IRON_ORE", fe_ore_amount, ticker)
+		}
+		if al_ok {
+			requests.SellCargo(ship, "ALUMINUM_ORE", al_ore_amount, ticker)
+		}
+	}
+
+	requests.Orbit(ship, ticker)
+	// Sell additional materials.
 	sellCargoOnMoons(ship, cargoAmounts, ticker)
 
 	// Return to mining location.
-	trip = requests.TravelTo(ship, asteroidField, ticker)
+	trip = requests.TravelTo(ship, engineeredAsteroid, ticker)
 	fmt.Println(ship, "returning from the drop-off")
 	sleepDuringTravel(trip)
 }
@@ -156,57 +228,28 @@ func dropOffMaterialAndReturn(ship, material string, ticker *time.Ticker) {
 // Sell cargo to markets that generally pay the most. Locations are currently
 // found manually and hardcoded as constants
 func sellCargoOnMoons(ship string, cargoAmounts map[string]int, ticker *time.Ticker) {
-	cu_amount, cu_ok := cargoAmounts["COPPER_ORE"]
-	al_amount, al_ok := cargoAmounts["ALUMINUM_ORE"]
-	fe_amount, fe_ok := cargoAmounts["IRON_ORE"]
-	if cu_ok || al_ok || fe_ok {
-		/*trip := requests.TravelTo(ship, barrenMoon)
-		        fmt.Println(trip)
-				sleepDuringTravel(trip)
-		*/
-		requests.DockShip(ship, ticker)
-		//requests.ViewMarket(barrenMoon)
-		if cu_ok {
-			requests.SellCargo(ship, "COPPER_ORE", cu_amount, ticker)
-		}
-		if al_ok {
-			requests.SellCargo(ship, "ALUMINUM_ORE", al_amount, ticker)
-		}
-		if fe_ok {
-			requests.SellCargo(ship, "IRON_ORE", fe_amount, ticker)
-		}
-		requests.Orbit(ship, ticker)
-	}
+	nh3_amount, nh3_ok := cargoAmounts["AMMONIA_ICE"]
+	h2o_amount, h2o_ok := cargoAmounts["ICE_WATER"]
+	si_amount, si_ok := cargoAmounts["SILICON_CRYSTALS"]
+	sio2_amount, sio2_ok := cargoAmounts["QUARTZ_SAND"]
 
-	ag_amount, ag_ok := cargoAmounts["SILVER_ORE"]
-	au_amount, au_ok := cargoAmounts["GOLD_ORE"]
-	pt_amount, pt_ok := cargoAmounts["PLATINUM_ORE"]
-	if ag_ok || au_ok || pt_ok {
-		trip := requests.TravelTo(ship, frozenMoon, ticker)
+	if nh3_ok || h2o_ok || si_ok || sio2_ok {
+		trip := requests.TravelTo(ship, exchangePlace, ticker)
+		fmt.Println(ship, "travelling to exchange place")
 		sleepDuringTravel(trip)
 		requests.DockShip(ship, ticker)
-		//requests.ViewMarket(frozenMoon)
-		if ag_ok {
-			select {
-			case <-ticker.C:
-				requests.SellCargo(ship, "SILVER_ORE", ag_amount, ticker)
-			}
-		}
-		if au_ok {
-			requests.SellCargo(ship, "GOLD_ORE", au_amount, ticker)
-		}
-		if pt_ok {
-			requests.SellCargo(ship, "PLATINUM_ORE", pt_amount, ticker)
-		}
-		requests.Orbit(ship, ticker)
-	}
 
-	if nh3_amount, ok := cargoAmounts["AMMONIA_ICE"]; ok {
-		trip := requests.TravelTo(ship, volcanicMoon, ticker)
-		sleepDuringTravel(trip)
-		requests.DockShip(ship, ticker)
-		if ok {
+		if nh3_ok {
 			requests.SellCargo(ship, "AMMONIA_ICE", nh3_amount, ticker)
+		}
+		if h2o_ok {
+			requests.SellCargo(ship, "ICE_WATER", h2o_amount, ticker)
+		}
+		if si_ok {
+			requests.SellCargo(ship, "SILICON_CRYSTALS", si_amount, ticker)
+		}
+		if sio2_ok {
+			requests.SellCargo(ship, "QUARTZ_SAND", sio2_amount, ticker)
 		}
 		requests.Orbit(ship, ticker)
 	}
@@ -218,7 +261,7 @@ func sellCargoBesidesMaterial(ship, material string, ticker *time.Ticker) {
 	for i := len(cargo) - 1; i >= 0; i-- {
 		item := cargo[i]
 		prefix := item.Symbol[0:4]
-		if prefix != "ALUM" {
+		if prefix != "COPP" {
 			requests.SellCargo(ship, item.Symbol, item.Units, ticker)
 		}
 	}
