@@ -18,6 +18,8 @@ import (
 const contractDestination string = "X1-BD74-H44" // imports ores: Fe, Al, Cu
 const exchangePlace = "X1-BD74-H46"              // moon, exchanges both ices, q sand, Si crystals
 const system string = "X1-BD74"
+
+// hq coords were: (16, -20)
 const hq string = "X1-BD74-A1"
 
 const shipyard string = "X1-BD74-C35" // seems to always be an orbital station
@@ -29,23 +31,75 @@ var miningShips []string = readMiningShipNames()
 
 // Feb 25 - Probe costs 21k, gas mining drone costs 32k
 func main() {
-	ticker := time.NewTicker(2050 * time.Millisecond)
-	gather("COPPER_ORE", ticker)
-	/*
-	   requests.PurchaseShip("SHIP_MINING_DRONE", shipyard)
-	   requests.Orbit("USER-6")
-	   fmt.Println(requests.TravelTo("USER-6", engineeredAsteroid))
-	*/
+	ticker := time.NewTicker(2001 * time.Millisecond)
+	//gather("COPPER_ORE", ticker)
+	build_adj_matrix(investigateMarkets(system, ticker))
 }
 
-func investigateMarkets(system string, ticker *time.Ticker) {
-	//sites_of_interest := []string{"PLANET", "MOON", "ORBITAL_STATION"}
-	sites_of_interest := []string{"FUEL_STATION"}
+type Point struct {
+	X, Y int
+}
+
+// Investigate a directed graph of trade routes between exporters and importers
+func build_adj_matrix(locations []Point, markets []objects.Market) {
+	if len(locations) != len(markets) {
+		panic("lengths should be equal, got={len(locations)}, {len(markets)}")
+	}
+	imported := make([][]string, len(locations))
+	exported := make([][]string, len(locations))
+
+	for i, market := range markets {
+		local_imports := make([]string, len(market.Imports))
+		for j, imported_good := range market.Imports {
+			local_imports[j] = imported_good.Symbol
+		}
+		imported[i] = local_imports
+
+		local_exports := make([]string, len(market.Exports))
+		for j, export := range market.Exports {
+			local_exports[j] = export.Symbol
+		}
+		exported[i] = local_exports
+	}
+
+	// Directed graph from an exporter to a matching importer
+	adj_matrix := make([][]string, len(markets))
+	for i := range markets {
+		adj_matrix[i] = make([]string, len(markets))
+	}
+
+	for i, market_exports := range exported {
+		for _, export_good := range market_exports {
+			for k, market_imports := range imported {
+				if i == k {
+					// Cannot import and export within the same market
+					continue
+				}
+				for _, import_good := range market_imports {
+					if export_good == import_good {
+						adj_matrix[i][k] = export_good
+					}
+				}
+			}
+		}
+	}
+
+	for i := range adj_matrix {
+		fmt.Println(adj_matrix[i])
+	}
+}
+
+func investigateMarkets(system string, ticker *time.Ticker) ([]Point, []objects.Market) {
+	sites_of_interest := []string{"PLANET", "MOON", "ORBITAL_STATION"}
+	//sites_of_interest := []string{"ORBITAL_STATION"}
 	real_stdout := os.Stdout
 	_, w, _ := os.Pipe()
 	os.Stdout = w
 
+	locations := make([]Point, 0)
+
 	i := 0
+	markets := make([]objects.Market, 0)
 	for _, site_type := range sites_of_interest {
 		sites := requests.ListWaypointsByType(system, site_type, ticker)
 
@@ -58,16 +112,25 @@ func investigateMarkets(system string, ticker *time.Ticker) {
 		for _, site := range waypoints.Data {
 			for _, trait := range site.Traits {
 				if trait["symbol"] == "MARKETPLACE" {
-					os.Stdout = real_stdout
-					fmt.Println(i, site.Symbol, site.Type, trait["name"])
-					requests.ViewMarket(site.Symbol, ticker)
-					os.Stdout = w
+					locations = append(locations, Point{X: site.X, Y: site.Y})
+					market := objects.MarketData{}
+					marketJSON := requests.ViewMarket(site.Symbol, ticker)
+					err := json.Unmarshal(marketJSON.Bytes(), &market)
+					if err != nil {
+						panic(err)
+					}
+					markets = append(markets, market.Market)
 				}
 			}
 			i += 1
 		}
 	}
 	os.Stdout = real_stdout
+	for i, market := range markets {
+		fmt.Println(locations[i], market.Symbol)
+	}
+
+	return locations, markets
 }
 
 func gather(material string, ticker *time.Ticker) {
