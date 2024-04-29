@@ -1,3 +1,4 @@
+// Repeat resource extraction, dropoff, and sales
 package main
 
 import (
@@ -10,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"spacetraders/objects"
-	"spacetraders/requests"
+	"github.com/j1642/spaceTraders-lib/objects"
+	"github.com/j1642/spaceTraders-lib/requests"
 )
 
 // const fancyImporter string = "X1-BD74-H47" // imports precious stones, gems, Au/Ag BARS (not ore)
@@ -262,19 +263,19 @@ func dropOffMaterialAndReturn(ship, material string, ticker *time.Ticker) {
 	// Drop off contract material.
 	requests.DockShip(ship, ticker)
 	/*
-		if cargoAmounts[material] > 0 {
-	        delivery := requests.DeliverMaterial(ship, material, contractID, ticker)
-	        // TODO: this is probably broken
-	        error := objects.Error{}
-	        err := json.Unmarshal(delivery.Bytes(), &error)
-	        if err != nil {
-	            panic("")
-	        }
-	        if error.ErrBody.Code == 4509 {
-	            // Error 4509: Contract terms met, cannot deliver more deliverables
-	            requests.FulfillContract(contractID, ticker)
-	        }
-		}
+			if cargoAmounts[material] > 0 {
+		        delivery := requests.DeliverMaterial(ship, material, contractID, ticker)
+		        // TODO: this is probably broken
+		        error := objects.Error{}
+		        err := json.Unmarshal(delivery.Bytes(), &error)
+		        if err != nil {
+		            panic("")
+		        }
+		        if error.ErrBody.Code == 4509 {
+		            // Error 4509: Contract terms met, cannot deliver more deliverables
+		            requests.FulfillContract(contractID, ticker)
+		        }
+			}
 	*/
 
 	fe_ore_amount, fe_ok := cargoAmounts["IRON_ORE"]
