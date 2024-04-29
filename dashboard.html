@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Spacetraders Dashboard">
+    <title>&#x25B4 &#x25BE Spacetraders Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="htmx.min.js"></script>
+</head>
+
+<header>
+    <nav>
+        <ul>
+            <li><a href="register">Register a new agent</a></li>
+        </ul>
+    </nav>
+</header>
+
+<body>
+    <h1>Spacetraders Dashboard</h1>
+    <table>
+        <thead>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+
+    <button hx-get="/server-check"
+        hx-trigger="click"
+        hx-target="#server-check"
+        hx-swap="outerHTML"
+    >
+        Server check
+    </button>
+    <p id="server-check"></p>
+
+</body>
+</html>

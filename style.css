@@ -1,0 +1,26 @@
+html {
+    background: linear-gradient(to right, green 0% 1%, white 1% 1.25%, black 1.25% 2.25%, ivory 2.25%);
+}
+body {
+    margin-left: 3%;
+    font-family: sans-serif;
+}
+table {
+    text-align: center;
+    border-collapse: collapse;
+}
+td, th {
+    padding-left: 5px;
+    padding-right: 5px;
+}
+img {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+nav {
+    background-color: #ddd;
+}
+nav ul {
+    list-style: none;
+}
