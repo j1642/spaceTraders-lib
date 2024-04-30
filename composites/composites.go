@@ -378,13 +378,17 @@ func readMiningShipNames() []string {
 }
 
 // Creates a new user, saves the auth key, and refreshes the ship names files.
-func DoNewUserBoilerplate(callsign string, ticker *time.Ticker) {
+func DoNewUserBoilerplate(callsign string, ticker *time.Ticker) error {
 	reply := requests.RegisterNewUser(callsign, ticker)
 	fmt.Println(reply)
 	registerMsg := objects.User{}
 	err := json.Unmarshal(reply.Bytes(), &registerMsg)
 	if err != nil {
 		panic(err)
+	}
+	// Check if registration worked
+	if registerMsg.ErrBody.Code >= 400 {
+		return fmt.Errorf("error: invalid agent, submit a different one")
 	}
 
 	err = os.WriteFile("secrets.txt", []byte(registerMsg.UserData.Token), 0600)
@@ -406,4 +410,5 @@ func DoNewUserBoilerplate(callsign string, ticker *time.Ticker) {
 		fmt.Println(registerMsg.UserData.Token)
 		panic(err)
 	}
+	return nil
 }

@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"spacetraders/objects"
+	"github.com/j1642/spaceTraders-lib/objects"
 )
 
 var auth string = readAuth()
@@ -421,7 +422,7 @@ func RegisterNewUser(callSign string, ticker *time.Ticker) *bytes.Buffer {
 func readAuth() string {
 	key, err := os.ReadFile("secrets.txt")
 	if err != nil {
-		panic(err)
+		log.Println("requests.readAuth: secrets.txt does not exist")
 	}
 	auth := fmt.Sprintf("Bearer %s", key)
 	auth = strings.ReplaceAll(auth, "\n", "")

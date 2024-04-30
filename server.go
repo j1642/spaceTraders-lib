@@ -7,16 +7,21 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
+	"time"
+
+	"github.com/j1642/spaceTraders-lib/composites"
 )
 
-var agentName string
+var agentName string = getAgentName()
 
 func main() {
-	runServer()
+	ticker := time.NewTicker(2001 * time.Millisecond)
+	runServer(ticker)
 }
 
-func runServer() {
+func runServer(ticker *time.Ticker) {
 	temIndex := template.Must(template.New("root.html").ParseFiles("html/root.html"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		err := temIndex.Execute(w, agentName)
@@ -47,6 +52,7 @@ func runServer() {
 				attrValue := strings.Split(requestData[i], "=")
 				if attrValue[0] == "agent" {
 					agentName = attrValue[1]
+					log.Println("agentName set to", agentName)
 				}
 			}
 			err = temRegister.Execute(w, agentName)
@@ -65,6 +71,32 @@ func runServer() {
 		http.ServeFile(w, r, "html/edit-agent.html")
 	})
 
+	// Send registration request to SpaceTraders
+	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PUT" && agentName != "" {
+			err := composites.DoNewUserBoilerplate(agentName, ticker)
+			if err != nil {
+				agentName = err.Error()
+			}
+		}
+		log.Println("possibly registered new agent:", agentName)
+		err := temIndex.Execute(w, agentName)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
 	fmt.Println("Server listening on 8080")
 	http.ListenAndServe(":8080", nil)
+}
+
+func getAgentName() string {
+	agent := ""
+	contents, err := os.ReadFile("miningDrones.txt")
+	if err != nil {
+		return ""
+	}
+	lines := strings.Split(string(contents), "\n")
+	agent = strings.Split(lines[0], "-")[0]
+	return agent
 }
