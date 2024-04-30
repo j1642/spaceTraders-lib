@@ -8,10 +8,13 @@
     <script type="text/javascript" src="htmx.min.js"></script>
 </head>
 <div hx-target="this" hx-swap="outerHTML">
-    <div><label>Agent</label>: {{.}}</div>
-    <button hx-get="/register-new">
+    <div><label>Current Agent</label>: {{.}}</div>
+    <button hx-get="/edit-agent">
         Edit Agent
     </button>
+    <!--<button hx-get="/register">
+        Register Agent
+    </button>-->
     <button hx-get="/">
         Back
     </button>

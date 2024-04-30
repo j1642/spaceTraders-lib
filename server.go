@@ -35,8 +35,8 @@ func runServer() {
 		http.ServeFile(w, r, "html/about.html")
 	})
 
-	temRegister := template.Must(template.New("register.html").ParseFiles("html/register.html"))
-	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
+	temRegister := template.Must(template.New("register-form.html").ParseFiles("html/register-form.html"))
+	http.HandleFunc("/register-form", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
@@ -61,8 +61,8 @@ func runServer() {
 		}
 	})
 
-	http.HandleFunc("/register-new", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "html/register-new.html")
+	http.HandleFunc("/edit-agent", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "html/edit-agent.html")
 	})
 
 	fmt.Println("Server listening on 8080")

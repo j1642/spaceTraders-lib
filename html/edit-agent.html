@@ -6,11 +6,11 @@
     <script type="text/javascript" src="htmx.min.js"></script>
 </head>
 
-<form hx-put="/register" hx-target="this" hx-swap="outerHTML">
+<form hx-put="/register-form" hx-target="this" hx-swap="outerHTML">
   <div>
     <label>Agent</label>
     <input type="text" name="agent" placeholder="Enter a unique callsign">
   </div>
   <button>Submit</button>
-  <button hx-get="/register">Cancel</button>
+  <button hx-get="/register-form">Cancel</button>
 </form>
