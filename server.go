@@ -17,9 +17,8 @@ func main() {
 }
 
 func runServer() {
-	temIndex := template.Must(template.New("dashboard.html").ParseFiles("dashboard.html"))
+	temIndex := template.Must(template.New("root.html").ParseFiles("html/root.html"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("/")
 		err := temIndex.Execute(w, agentName)
 		if err != nil {
 			log.Fatal(err)
@@ -33,28 +32,10 @@ func runServer() {
 		http.ServeFile(w, r, "style.css")
 	})
 	http.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "about.html")
+		http.ServeFile(w, r, "html/about.html")
 	})
 
-	http.HandleFunc("/server-check", func(w http.ResponseWriter, r *http.Request) {
-		resp, err := http.Get("https://api.spacetraders.io/v2")
-		if err != nil {
-			log.Fatal(err)
-		}
-		body, err := io.ReadAll(resp.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		body = append([]byte{uint8('<'), uint8('p'), uint8('>')}, body...)
-		body = append(body, []byte{uint8('<'), uint8('/'), uint8('p'), uint8('>')}...)
-		_, err = w.Write(body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		resp.Body.Close()
-	})
-
-	temRegister := template.Must(template.New("register.html").ParseFiles("register.html"))
+	temRegister := template.Must(template.New("register.html").ParseFiles("html/register.html"))
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
 			body, err := io.ReadAll(r.Body)
@@ -66,7 +47,6 @@ func runServer() {
 				attrValue := strings.Split(requestData[i], "=")
 				if attrValue[0] == "agent" {
 					agentName = attrValue[1]
-					fmt.Println(attrValue)
 				}
 			}
 			err = temRegister.Execute(w, agentName)
@@ -79,31 +59,10 @@ func runServer() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		/*_, err := w.Write([]byte(`<!DOCTYPE html><div hx-target="this" hx-swap="outerHTML">
-		            <div><label>Name</label>: Placeholder</div>
-		            <button hx-get="/register-new">Edit agent</button>
-		        </div>`,
-				))*/
-		/*if err != nil {
-			log.Fatal(err)
-		}*/
 	})
 
 	http.HandleFunc("/register-new", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "register-new.html")
-		fmt.Println("register-new")
-		/*_, err := w.Write([]byte(`<!DOCTYPE html><form hx-put="/register" hx-target="this" hx-swap="outerHTML">
-		        <div>
-		            <label>Agent</label>
-		            <input type="text" name="agent" value="New agent name">
-		        </div>
-		        <button>Submit</button>
-		        <button hx-get="/register">Cancel</button>
-		        </form>`,
-				))
-				if err != nil {
-					log.Fatal(err)
-				}*/
+		http.ServeFile(w, r, "html/register-new.html")
 	})
 
 	fmt.Println("Server listening on 8080")
