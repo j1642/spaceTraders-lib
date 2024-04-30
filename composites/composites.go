@@ -29,7 +29,7 @@ const shipyard string = "X1-BD74-C35" // seems to always be an orbital station
 const engineeredAsteroid string = "X1-BD74-DE5F"
 const contractID string = "clt1v2rv100whs60cahif98q1"
 
-var miningShips []string = readMiningShipNames()
+var miningShips []string = []string{} //readMiningShipNames()
 
 type Point struct {
 	X, Y int
@@ -387,7 +387,7 @@ func DoNewUserBoilerplate(callsign string, ticker *time.Ticker) {
 		panic(err)
 	}
 
-	err = os.WriteFile("secrets.txt", []byte(registerMsg.UserData.Token), 664)
+	err = os.WriteFile("secrets.txt", []byte(registerMsg.UserData.Token), 0600)
 	if err != nil {
 		fmt.Println(registerMsg.UserData.Token)
 		panic(err)
@@ -396,13 +396,12 @@ func DoNewUserBoilerplate(callsign string, ticker *time.Ticker) {
 	// Error b/c auth var in requests is not updated.
 	//requests.AcceptContract(registerMsg.UserData.Contract.Id)
 
-	err = os.WriteFile("miningDrones.txt", []byte(callsign+"-1"), 664)
+	err = os.WriteFile("miningDrones.txt", []byte(callsign+"-1"), 0664)
 	if err != nil {
 		fmt.Println(registerMsg.UserData.Token)
 		panic(err)
 	}
-
-	err = os.WriteFile("probes.txt", []byte(callsign+"-2"), 664)
+	err = os.WriteFile("probes.txt", []byte(callsign+"-2"), 0664)
 	if err != nil {
 		fmt.Println(registerMsg.UserData.Token)
 		panic(err)
