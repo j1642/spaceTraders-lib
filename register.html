@@ -8,10 +8,11 @@
     <script type="text/javascript" src="htmx.min.js"></script>
 </head>
 <div hx-target="this" hx-swap="outerHTML">
-    <div><label>First Name</label>: Joe</div>
-    <div><label>Last Name</label>: Blow</div>
-    <div><label>Email</label>: joe@blow.com</div>
-    <button hx-get="/register-new"> <!--hx-swap="outerHTML" hx-target="d">-->
-    Click To Edit
+    <div><label>Agent</label>: {{.}}</div>
+    <button hx-get="/register-new">
+        Edit Agent
+    </button>
+    <button hx-get="/">
+        Back
     </button>
 </div>

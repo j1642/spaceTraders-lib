@@ -12,28 +12,22 @@
 <header>
     <nav>
         <ul>
-            <li><a href="register">Register a new agent</a></li>
+            <li><a href="/">Home</a></li>
+            <li><a href="about">About</a></li>
+            <li><a href="register">Register agent</a></li>
         </ul>
     </nav>
 </header>
 
 <body>
     <h1>Spacetraders Dashboard</h1>
+    <h4>Agent: {{.}}</h4>
     <table>
         <thead>
         </thead>
         <tbody>
         </tbody>
     </table>
-
-    <button hx-get="/server-check"
-        hx-trigger="click"
-        hx-target="#server-check"
-        hx-swap="outerHTML"
-    >
-        Server check
-    </button>
-    <p id="server-check"></p>
 
 </body>
 </html>
