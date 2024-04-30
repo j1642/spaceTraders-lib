@@ -1,5 +1,6 @@
-// Repeat resource extraction, dropoff, and sales
-package main
+// Composite functions to run resource extraction, dropoff, and sales; register
+// new users; collect info on markets; etc.
+package composites
 
 import (
 	"bytes"
@@ -29,13 +30,6 @@ const engineeredAsteroid string = "X1-BD74-DE5F"
 const contractID string = "clt1v2rv100whs60cahif98q1"
 
 var miningShips []string = readMiningShipNames()
-
-// Feb 25 - Probe costs 21k, gas mining drone costs 32k
-func main() {
-	ticker := time.NewTicker(2001 * time.Millisecond)
-	//gather("COPPER_ORE", ticker)
-	build_adj_matrix(investigateMarkets(system, ticker))
-}
 
 type Point struct {
 	X, Y int
@@ -384,7 +378,7 @@ func readMiningShipNames() []string {
 }
 
 // Creates a new user, saves the auth key, and refreshes the ship names files.
-func doNewUserBoilerplate(callsign string, ticker *time.Ticker) {
+func DoNewUserBoilerplate(callsign string, ticker *time.Ticker) {
 	reply := requests.RegisterNewUser(callsign, ticker)
 	fmt.Println(reply)
 	registerMsg := objects.User{}
