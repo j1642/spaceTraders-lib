@@ -1,11 +1,15 @@
 package objects
 
+type AgentData struct {
+	Agent Agent `json:"data"`
+}
 type Agent struct {
 	AccountId      string `json:"accountId"`
 	Symbol         string `json:"symbol"`
 	Headquarters   string `json:"headquarters"`
 	Credits        int    `json:"credits"`
 	InitialFaction string `json:"startingFaction"`
+	ShipCount      int    `json:"shipCount"`
 }
 
 // Buy/sell
@@ -147,7 +151,7 @@ type Nav struct {
 	FlightMode     string   `json:"flightMode"`
 }
 type NavRoute struct {
-	Departure     NavRouteLocation `json:"departure"`
+	Origin        NavRouteLocation `json:"origin"`
 	Destination   NavRouteLocation `json:"destination"`
 	Arrival       string           `json:"arrival"`
 	DepartureTime string           `json:"departureTime"`
@@ -161,6 +165,9 @@ type NavRouteLocation struct {
 }
 
 // Ship description.
+type AllShips struct {
+	Ships []Ship `json:"data"`
+}
 type ShipData struct {
 	Ship Ship `json:"data"`
 }

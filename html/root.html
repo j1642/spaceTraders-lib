@@ -21,11 +21,76 @@
 
 <body>
     <h1>Spacetraders Dashboard</h1>
-    <h4>Agent: {{.}}</h4>
     <table>
         <thead>
+            <th>Agent</th>
+            <th>HQ</th>
+            <th>Credits</th>
+            <th>Faction</th>
+            <th>Ships</th>
         </thead>
         <tbody>
+            <td>{{.Agent.Symbol}}</td>
+            <td>{{.Agent.Headquarters}}</td>
+            <td>{{.Agent.Credits}}</td>
+            <td>{{.Agent.InitialFaction}}</td>
+            <td>{{.Agent.ShipCount}}</td>
+        </tbody>
+    </table>
+    <table>
+        <thead>
+            <tr><th></th>
+            {{range .Ships}}
+                <th>{{.Symbol}}</th>
+            {{end}}
+            </tr>
+        </thead>
+        <tbody>
+            <tr><th>Location</th>
+                {{range .Ships}}
+                    <td>{{.Nav.WaypointSymbol}}</td>
+                {{end}}
+            </tr>
+            <tr><th>Status</th>
+                {{range .Ships}}
+                    <td>{{.Nav.Status}}</td>
+                {{end}}
+            </tr>
+            <tr><th>Arrival</th>
+                {{range .Ships}}
+                    <td>{{.Nav.Route.Arrival}}</td>
+                {{end}}
+            </tr>
+            <tr><th>Origin</th>
+                {{range .Ships}}
+                    <td>{{.Nav.Route.Origin.Symbol}}</td>
+                {{end}}
+            </tr>
+            <tr><th>Dest.</th>
+                {{range .Ships}}
+                    <td>{{.Nav.Route.Destination.Symbol}}</td>
+                {{end}}
+            </tr>
+            <tr><th>Fuel</th>
+                {{range .Ships}}
+                    <td>{{.Fuel.Current}}/{{.Fuel.Capacity}}</td>
+                {{end}}
+            </tr>
+            <tr><th>Cargo</th>
+                {{range .Ships}}
+                    <td>{{.Cargo.Units}}/{{.Cargo.Capacity}}</td>
+                {{end}}
+            </tr>
+            <tr><th>Type</th>
+                {{range .Ships}}
+                    <td>{{.Frame.Name}}</td>
+                {{end}}
+            </tr>
+            <tr><th>Speed</th>
+                {{range .Ships}}
+                    <td>{{.Engine.Speed}}</td>
+                {{end}}
+            </tr>
         </tbody>
     </table>
 

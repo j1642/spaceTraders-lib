@@ -350,10 +350,12 @@ func TravelTo(ship, waypoint string, ticker *time.Ticker) *bytes.Buffer {
 	return readResponse(resp)
 }
 
-func ListMyShips(ticker *time.Ticker) {
+func ListMyShips(ticker *time.Ticker) *bytes.Buffer {
 	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/ships", nil)
 	resp := sendRequest(req, ticker)
-	fmt.Println(readResponse(resp))
+	body := readResponse(resp)
+	//fmt.Println(body)
+	return body
 }
 
 func PurchaseShip(shipType, waypoint string, ticker *time.Ticker) {
@@ -389,12 +391,13 @@ func ListWaypointsByType(system string, typ string, ticker *time.Ticker) *bytes.
 	return body
 }
 
-func ViewAgent(ticker *time.Ticker) *http.Response {
+func ViewAgent(ticker *time.Ticker) *bytes.Buffer {
 	req := makeRequest("GET", "https://api.spacetraders.io/v2/my/agent", nil)
 	resp := sendRequest(req, ticker)
+	body := readResponse(resp)
 
-	fmt.Println(readResponse(resp))
-	return resp
+	fmt.Println(body)
+	return body
 }
 
 func AcceptContract(contractId string, ticker *time.Ticker) {

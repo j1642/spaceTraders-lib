@@ -16,7 +16,7 @@ func TestShipData(t *testing.T) {
             "systemSymbol": "A",
             "waypointSymbol": "A",
             "route": {
-                "departure": {
+                "origin": {
                     "symbol": "A",
                     "type": "MOON",
                     "systemSymbol": "A",
@@ -138,8 +138,8 @@ func TestShipData(t *testing.T) {
 	if err != nil {
 		t.Fatal("TestDataShip():", err)
 	}
-	if data.Ship.Nav.Route.Departure.Type != "MOON" {
-		t.Fatalf("Expected 'MOON', got=%v", data.Ship.Nav.Route.Departure.Type)
+	if data.Ship.Nav.Route.Origin.Type != "MOON" {
+		t.Fatalf("Expected 'MOON', got=%v", data.Ship.Nav.Route.Origin.Type)
 	}
 }
 
@@ -264,13 +264,14 @@ func TestMarketData(t *testing.T) {
         ]
     }
 }`
-	var data Market
+	var data MarketData
 	err := json.Unmarshal([]byte(jsonReply), &data)
 	if err != nil {
 		t.Fatal("TestDataBuySell():", err)
 	}
-	if data.MarketBody.Imports[0].Symbol != "ICE_WATER" {
-		t.Fatalf("expected 'ICE_WATER', got=%v", data.MarketBody.Imports[0].Symbol)
+	t.Log(data)
+	if data.Market.Imports[0].Symbol != "ICE_WATER" {
+		t.Fatalf("expected 'ICE_WATER', got=%v", data.Market.Imports[0].Symbol)
 	}
 }
 

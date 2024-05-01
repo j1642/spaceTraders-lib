@@ -2,6 +2,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -12,19 +13,49 @@ import (
 	"time"
 
 	"github.com/j1642/spaceTraders-lib/composites"
+	"github.com/j1642/spaceTraders-lib/objects"
+	"github.com/j1642/spaceTraders-lib/requests"
 )
 
 var agentName string = getAgentName()
 
-func main() {
-	ticker := time.NewTicker(2001 * time.Millisecond)
-	runServer(ticker)
+type dashboardData struct {
+	Ships []objects.Ship
+	Agent objects.Agent
 }
 
-func runServer(ticker *time.Ticker) {
+func main() {
+	ticker := time.NewTicker(1001 * time.Millisecond)
+	data := dashboardData{}
+	if agentName != "" {
+		var ships objects.AllShips
+		json.Unmarshal(requests.ListMyShips(ticker).Bytes(), &ships)
+		data.Ships = ships.Ships
+		// Remove date from time stamp
+		for i := range data.Ships {
+			_, hms, isCut := strings.Cut(data.Ships[i].Nav.Route.Arrival, "T")
+			if !isCut {
+				log.Fatal("Missing T in", data.Ships[i].Nav.Route.Arrival)
+			}
+			hms, _, isCut = strings.Cut(hms, ".")
+			if !isCut {
+				log.Fatal("Missing . in", data.Ships[i].Nav.Route.Arrival)
+			}
+			data.Ships[i].Nav.Route.Arrival = hms
+		}
+
+		/*var agent objects.AgentData
+		  json.Unmarshal(requests.ViewAgent(ticker).Bytes(), &agent)
+		  data.Agent = agent.Agent*/
+	}
+
+	runServer(ticker, data)
+}
+
+func runServer(ticker *time.Ticker, data dashboardData) {
 	temIndex := template.Must(template.New("root.html").ParseFiles("html/root.html"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		err := temIndex.Execute(w, agentName)
+		err := temIndex.Execute(w, data)
 		if err != nil {
 			log.Fatal(err)
 		}
