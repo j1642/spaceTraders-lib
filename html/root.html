@@ -15,6 +15,7 @@
             <li><a href="/">Home</a></li>
             <li><a href="about">About</a></li>
             <li><a href="register-form">Register agent</a></li>
+            <li><a href="map">Map</a></li>
         </ul>
     </nav>
 </header>
@@ -53,7 +54,13 @@
             </tr>
             <tr><th>Status</th>
                 {{range .Ships}}
-                    <td>{{.Nav.Status}}</td>
+                <td><form hx-put="flip-status" hx-target="this" hx-swap="outerHTML">
+                        <div>{{.Nav.Status}}</div>
+                        <input type="hidden" name="ship" value="{{.Symbol}}"/>
+                        <button name="flip-status" value="IN_ORBIT">Orbit</button>
+                        <button name="flip-status" value="DOCKED">Dock</button>
+                    </form>
+                </td>
                 {{end}}
             </tr>
             <tr><th>Arrival</th>

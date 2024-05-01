@@ -43,10 +43,11 @@ func main() {
 			}
 			data.Ships[i].Nav.Route.Arrival = hms
 		}
-
-		/*var agent objects.AgentData
-		  json.Unmarshal(requests.ViewAgent(ticker).Bytes(), &agent)
-		  data.Agent = agent.Agent*/
+		/*
+				var agent objects.AgentData
+		        json.Unmarshal(requests.ViewAgent(ticker).Bytes(), &agent)
+		        data.Agent = agent.Agent
+		*/
 	}
 
 	runServer(ticker, data)
@@ -69,6 +70,12 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	})
 	http.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "html/about.html")
+	})
+	http.HandleFunc("/edit-agent", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "html/edit-agent.html")
+	})
+	http.HandleFunc("/map", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "html/map.html")
 	})
 
 	temRegister := template.Must(template.New("register-form.html").ParseFiles("html/register-form.html"))
@@ -98,10 +105,6 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		}
 	})
 
-	http.HandleFunc("/edit-agent", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "html/edit-agent.html")
-	})
-
 	// Send registration request to SpaceTraders
 	http.HandleFunc("/register", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" && agentName != "" {
@@ -114,6 +117,49 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		err := temIndex.Execute(w, agentName)
 		if err != nil {
 			log.Fatal(err)
+		}
+	})
+
+	// Set ships to dock or orbit
+	http.HandleFunc("/flip-status", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PUT" {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			requestData := strings.Split(string(body), "&")
+			flipTo := ""
+			shipName := ""
+			for i := range requestData {
+				attrValue := strings.Split(requestData[i], "=")
+				if attrValue[0] == "flip-status" {
+					flipTo = attrValue[1]
+				} else if attrValue[0] == "ship" {
+					shipName = attrValue[1]
+				}
+			}
+
+			_, err = w.Write([]byte(strings.Join([]string{
+				`<form hx-put="flip-status" hx-target="this" hx-swap="outerHTML">
+                        <div>`, flipTo, `</div>`,
+				`<input type="hidden" name="ship" value="`, shipName, `"/>
+                        <button name="flip-status" value="IN_ORBIT">Orbit</button>
+                        <button name="flip-status" value="DOCKED">Dock</button>
+                    </form>`}, ""),
+			))
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			if flipTo == "IN_ORBIT" {
+				requests.Orbit(shipName, ticker)
+			} else if flipTo == "DOCKED" {
+				requests.DockShip(shipName, ticker)
+			} else {
+				log.Fatal("invalid new status", flipTo)
+			}
+
+			log.Println(shipName, flipTo)
 		}
 	})
 
