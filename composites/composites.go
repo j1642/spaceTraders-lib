@@ -412,3 +412,69 @@ func DoNewUserBoilerplate(callsign string, ticker *time.Ticker) error {
 	}
 	return nil
 }
+
+// Create or append to a cache of system waypoints, with one JSON waypoint per line
+func StoreSystemWaypoints(system string, ticker *time.Ticker) {
+	systemFile := fmt.Sprintf("maps/%s.json", system)
+	f, err := os.OpenFile(systemFile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	contents := make([]byte, 1000000)
+	bytesRead, err := f.Read(contents)
+	if err != nil {
+		// EOF error b/c file is empty. Not a problem
+	}
+	lines := bytes.Split(contents, []byte("\n"))
+
+	requestPage := 1
+	moreRequestsNeeded := true
+	var waypoints objects.Waypoints
+
+	for moreRequestsNeeded {
+		resp := requests.ListWaypointsInSystem(system, ticker, requestPage)
+		json.Unmarshal(resp.Bytes(), &waypoints)
+
+		if waypoints.Meta["page"]*waypoints.Meta["limit"] >= waypoints.Meta["total"] {
+			moreRequestsNeeded = false
+		}
+		requestPage += 1
+
+		for i, place := range waypoints.Data {
+			// Strip superfluous fields
+			for j := range place.Traits {
+				// delete() is idempotent, supposedly
+				delete(waypoints.Data[i].Traits[j], "description")
+				delete(waypoints.Data[i].Traits[j], "name")
+			}
+
+			serialWaypoint, err := json.Marshal(place)
+			if err != nil {
+				panic(err)
+			}
+			// Prevent insertion of duplicate waypoints
+			// Assumes the API response returns distinct waypoints
+			if bytesRead > 0 {
+				isDuplicate := false
+				for _, line := range lines {
+					if bytes.Equal(line, serialWaypoint) {
+						isDuplicate = true
+						fmt.Println("duplicate:", place.Symbol)
+						break
+					}
+				}
+				if isDuplicate {
+					continue
+				}
+			}
+
+			// Write a line-separated unique waypoint
+			serialWaypoint = append(serialWaypoint, byte('\n'))
+			_, err = f.Write(serialWaypoint)
+			if err != nil {
+				log.Fatal(err)
+			}
+			fmt.Println("wrote to file:", place.Symbol)
+		}
+	}
+}

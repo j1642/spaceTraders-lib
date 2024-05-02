@@ -369,12 +369,17 @@ func PurchaseShip(shipType, waypoint string, ticker *time.Ticker) {
 	fmt.Println(readResponse(resp))
 }
 
-func ListWaypointsInSystem(system string, ticker *time.Ticker) {
+func ListWaypointsInSystem(system string, ticker *time.Ticker, page int) *bytes.Buffer {
+	if page < 1 {
+		log.Fatal("page arg must be >= 1")
+	}
+	pg := strconv.Itoa(page)
 	url := strings.Join(
-		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints"}, "")
+		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints/?limit=20&page=", pg}, "")
 	req := makeRequest("GET", url, nil)
 	resp := sendRequest(req, ticker)
-	fmt.Println(readResponse(resp))
+	body := readResponse(resp)
+	return body
 }
 
 // types: PLANET, MOON, ORBITAL_STATION, ASTEROID_FIELD, ENGINEERED_ASTEROID,
@@ -382,7 +387,7 @@ func ListWaypointsInSystem(system string, ticker *time.Ticker) {
 // GRAVITY_WELL, ARTIFICIAL_GRAVITY_WELL, FUEL_STATION
 func ListWaypointsByType(system string, typ string, ticker *time.Ticker) *bytes.Buffer {
 	url := strings.Join(
-		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints?type=", typ}, "")
+		[]string{"https://api.spacetraders.io/v2/systems/", system, "/waypoints?type=", typ, "&limit=20"}, "")
 	req := makeRequest("GET", url, nil)
 	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
