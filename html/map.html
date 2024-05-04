@@ -39,58 +39,63 @@
             <td class="bordered map-width"></td>
         </tr>
         <tr class="map-height">
-            <td class="bordered map-width"></td>
-            <td class="bordered map-width"></td>
+            <td class="bordered map-width" colspan=2></td>
         </tr>
     </table>
     <table>
-        {{$divisor := .Divisor}}
-        {{$minX := .MinX}}
-        {{$curX := .MinX}}
-        {{$curY := .MaxY}}
-        {{$waypoints := .Waypoints}}
-        {{$xRange := .XRange}}
-        {{$foundMatch := false}}
-        {{range .YRange}}
-            <tr class="map-height">
-            {{$curX = $minX}}
-            {{range $xRange}}
-                {{$foundMatch = false}}
-                {{range $waypoints}}
-                    {{if (and (eq (div .X $divisor) $curX) (eq (div .Y $divisor) $curY))}}
-                        {{if (eq .Type "MOON")}}
-                            <td class="map-width moon-cell"></td>
-                        {{else if (eq .Type "PLANET")}}
-                            <td class="map-width planet-cell"></td>
-                        {{else if (eq .Type "ASTEROID")}}
+        {{- $divisor := .Divisor -}}
+        {{- $minX := .MinX -}}
+        {{- $curX := .MinX -}}
+        {{- $curY := .MaxY -}}
+        {{- $waypoints := .Waypoints -}}
+        {{- $xRange := .XRange -}}
+        {{- $foundMatch := false -}}
+        {{- $colspan := 0 -}}
+        {{- range .YRange -}}
+        <tr class="map-height">
+            {{- $curX = $minX -}}
+            {{- range $xRange -}}
+                {{- $foundMatch = false -}}
+                {{- range $waypoints -}}
+                    {{- if (and (eq (div .X $divisor) $curX) (eq (div .Y $divisor) $curY)) -}}
+                        <td class="map-width" colspan="{{$colspan -}}"></td>
+                        {{- $colspan = 0 -}}
+                        {{- if (eq .Type "ASTEROID") -}}
                             <td class="map-width asteroid-cell"></td>
-                        {{else if (eq .Type "FUEL_STATION")}}
+                        {{- else if (eq .Type "MOON") -}}
+                            <td class="map-width moon-cell"></td>
+                        {{- else if (eq .Type "PLANET") -}}
+                            <td class="map-width planet-cell"></td>
+                            {{- print .X .Y -}}
+                            {{- println .Type -}}
+                        {{- else if (eq .Type "FUEL_STATION") -}}
                             <td class="map-width fuel-cell"></td>
-                        {{else if (eq .Type "JUMP_GATE")}}
+                        {{- else if (eq .Type "JUMP_GATE") -}}
                             <td class="map-width gate-cell"></td>
-                        {{else if (eq .Type "ASTEROID_BASE")}}
+                        {{- else if (eq .Type "ASTEROID_BASE") -}}
                             <td class="map-width asteroid-base-cell"></td>
-                        {{else if (eq .Type "ENGINEERED_ASTEROID")}}
+                        {{- else if (eq .Type "ENGINEERED_ASTEROID") -}}
                             <td class="map-width eng-asteroid-cell"></td>
-                        {{else if (eq .Type "GAS_GIANT")}}
+                        {{- else if (eq .Type "GAS_GIANT") -}}
                             <td class="map-width gas-giant-cell"></td>
-                        {{else}}
-                            {{print .X .Y}}
-                            {{println .Type}}
-                        {{end}}
+                        {{- else -}}
+                            {{- print .X .Y -}}
+                            {{- println .Type -}}
+                        {{- end -}}
                         <!--TODO: moons often have exact same (x,y) coord-->
-                        {{$foundMatch = true}}
-                        {{break}}
-                    {{end}}
-                {{end}}
-                {{if (eq $foundMatch false)}}
-                    <td class="map-width"></td>
-                {{end}}
-                {{$curX = increment $curX}}
-            {{end}}
+                        {{- $foundMatch = true -}}
+                        {{- break -}}
+                    {{- end -}}
+                {{- end -}}
+                {{- if (eq $foundMatch false) -}}
+                    {{- $colspan = increment $colspan -}}
+                {{- end -}}
+                {{- $curX = increment $curX -}}
+            {{- end -}}
+            <td class="map-width" colspan="{{$colspan -}}"></td>
             </tr>
-            {{$curY = decrement $curY}}
-        {{end}}
+            {{- $curY = decrement $curY -}}
+        {{- end -}}
     </table>
 </body>
 </html>
