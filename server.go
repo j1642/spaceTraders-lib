@@ -98,6 +98,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		if err != nil {
 			log.Fatal(err)
 		}
+		contents = bytes.Trim(contents, "\n")
 		lines := bytes.Split(contents, []byte("\n"))
 
 		maxX, maxY := -100_000, -100_000
