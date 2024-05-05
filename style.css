@@ -43,19 +43,19 @@ table {
     background-color: blue;
 }
 .moon-cell {
-    background-color: green;
+    background-color: #00f000;
 }
 .asteroid-cell {
-    background-color: gray;
+    background-color: silver;
 }
 .fuel-cell {
     background-color: orange;
 }
 .gate-cell {
-    background-color: teal;
+    background-color: fuchsia;
 }
 .asteroid-base-cell {
-    background-color: purple;
+    background-color: #0dd;
 }
 .eng-asteroid-cell {
     background-color: black;
@@ -71,4 +71,8 @@ table {
 }
 .bordered {
     border: 1px solid black;
+}
+.legend {
+    padding-left: 4px;
+    padding-right: 4px;
 }

@@ -23,26 +23,28 @@
     <h2>{{.System}} Map</h2>
     <table>
         <tr>
-            <th>Planet</th>
-            <th>Moon</th>
-            <th>Engineered Asteroid</th>
+            <th class="legend">Planet</th>
+            <th class="legend">Moon</th>
+            <th class="legend">Engineered Asteroid</th>
+            <th class="legend">Asteroid</th>
+            <th class="legend">Fuel Station</th>
+            <th class="legend">Jump Gate</th>
+            <th class="legend">Asteroid Base</th>
+            <th class="legend">Gas Giant</th>
         </tr>
         <tr class="map-height">
-            <td class="map-width planet-cell"></td>
-            <td class="map-width moon-cell"></td>
-            <td class="map-width eng-asteroid-cell"></td>
+            <td class="planet-cell"></td>
+            <td class="moon-cell"></td>
+            <td class="eng-asteroid-cell"></td>
+            <td class="asteroid-cell"></td>
+            <td class="fuel-cell"></td>
+            <td class="gate-cell"></td>
+            <td class="asteroid-base-cell"></td>
+            <td class="gas-giant-cell"></td>
         </tr>
     </table>
     <table>
-        <tr class="map-height">
-            <td class="bordered map-width" hx-put="/map-hello" hx-swap="outerHTML" hx-trigger="click"></td>
-            <td class="bordered map-width"></td>
-        </tr>
-        <tr class="map-height">
-            <td class="bordered map-width" colspan=2></td>
-        </tr>
-    </table>
-    <table>
+        <caption>Map of the {{.System}} solar system</caption>
         {{- $divisor := .Divisor -}}
         {{- $minX := .MinX -}}
         {{- $curX := .MinX -}}
@@ -58,8 +60,8 @@
                 {{- $foundMatch = false -}}
                 {{- range $waypoints -}}
                     {{- if (and (eq (div .X $divisor) $curX) (eq (div .Y $divisor) $curY)) -}}
-                        <td class="map-width" colspan="{{$colspan -}}"></td>
-                        {{- $colspan = 0 -}}
+                        <!--<td class="map-width" colspan="{{$colspan -}}"></td>
+                            - $colspan = 0 - -->
                         {{- if (eq .Type "ASTEROID") -}}
                             <td class="map-width asteroid-cell"></td>
                         {{- else if (eq .Type "MOON") -}}
@@ -88,11 +90,12 @@
                     {{- end -}}
                 {{- end -}}
                 {{- if (eq $foundMatch false) -}}
-                    {{- $colspan = increment $colspan -}}
+                <!-- - $colspan = increment $colspan - -->
+                    <td class="map-width"></td>
                 {{- end -}}
                 {{- $curX = increment $curX -}}
             {{- end -}}
-            <td class="map-width" colspan="{{$colspan -}}"></td>
+            <td class="map-width" colspan="{{$colspan}}"></td>
             </tr>
             {{- $curY = decrement $curY -}}
         {{- end -}}
