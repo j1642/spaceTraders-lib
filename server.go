@@ -96,7 +96,11 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		system := "X1-V57"
 		contents, err := os.ReadFile(fmt.Sprintf("maps/%s.json", system))
 		if err != nil {
-			log.Fatal(err)
+			composites.StoreSystemWaypoints(system, ticker)
+			contents, err = os.ReadFile(fmt.Sprintf("maps/%s.json", system))
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 		contents = bytes.Trim(contents, "\n")
 		lines := bytes.Split(contents, []byte("\n"))
