@@ -138,51 +138,34 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	})
 
 	http.HandleFunc("/map-hello", func(w http.ResponseWriter, r *http.Request) {
-		/*if r.Method == "PUT" {
-            body, err := io.ReadAll(r.Body)
-            if err != nil {
-                log.Fatal(err)
-            }
-            var celestialType string
-            requestData := strings.Split(string(body), "&")
-            for i := range requestData {
-                attrValue := strings.Split(requestData[i], "=")
-                if attrValue[0] == "type" {
-                    celestialType = attrValue[1]
-                }
-            }
+		if r.Method == "PUT" {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			var celestialType string
+			requestData := strings.Split(string(body), "&")
+			for i := range requestData {
+				attrValue := strings.Split(requestData[i], "=")
+				if attrValue[0] == "type" {
+					celestialType = attrValue[1]
+				}
+			}
 
-            _, err = w.Write([]byte(
-                strings.Join([]string{
-                    `<td id="target" class="bordered `, celestialType,`-cell">
-                    <form hx-put="/map-remove" hx-target="#target" hx-swap="outerHTML" hx-trigger="mouseleave"
-                    style="width:100%; height:100%;">
-                        Hello!
-                        <input type="hidden" name="type" value="`, celestialType, `"/>
-                    </form>
-                </td>`}, ""),
-            ))
-            if err != nil {
-                log.Fatal(err)
-            }
+			_, err = w.Write([]byte(
+				strings.Join([]string{
+					`<td class="bordered" hx-put="/map-remove" hx-swap="outerHTML" hx-trigger="mouseleave" hx-vals='{"type":"`, celestialType, `"}'>Hello!</td>`,
+				}, ""),
+			))
+			if err != nil {
+				log.Fatal(err)
+			}
 
-            return
-        }*/
-		//_, err := w.Write([]byte(strings.Join([]string{`<td style="width:1em; border: 1px solid black" hx-put="/map-remove" hx-trigger="mouseleave" hx-swap="outerHTML">Hello!`,
-		_, err := w.Write([]byte(
-			strings.Join([]string{
-				`<td id="target" class="bordered">
-                <form hx-put="/map-remove" hx-target="#target" hx-swap="outerHTML" hx-trigger="mouseleave"
-                style="width:100%; height:100%;">
-                    Hello!
-                    <input type="hidden" name="type" value="`, `asteroid`, `"/>
-                </form>
-            </td>`}, ""),
-		))
-		if err != nil {
-			log.Fatal(err)
+			return
 		}
+		log.Fatal("map-hello: not a PUT request")
 	})
+
 	http.HandleFunc("/map-remove", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
 			body, err := io.ReadAll(r.Body)
@@ -200,7 +183,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 
 			_, err = w.Write([]byte(
 				strings.Join([]string{
-					`<td class="map-width bordered `, celestialType, `-cell" hx-put="/map-hello" hx-trigger="click" hx-swap="outerHTML"></td>`}, ""),
+					`<td class="map-width bordered `, celestialType, `" hx-put="/map-hello" hx-trigger="click" hx-swap="outerHTML"></td>`}, ""),
 			))
 			if err != nil {
 				log.Fatal(err)
@@ -208,11 +191,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 
 			return
 		}
-
-		_, err := w.Write([]byte(`<td class="map-width bordered" hx-put="/map-hello" hx-trigger="click" hx-swap="outerHTML"></td>`))
-		if err != nil {
-			log.Fatal(err)
-		}
+		log.Fatal("map-remove: not a PUT request")
 	})
 
 	temRegister := template.Must(template.New("register-form.html").ParseFiles("html/register-form.html"))

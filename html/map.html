@@ -63,12 +63,7 @@
                         <!--<td class="map-width" colspan="{{$colspan -}}"></td>
                             - $colspan = 0 - -->
                         {{- if (eq .Type "ASTEROID") -}}
-                        <td class="map-width asteroid-cell" hx-put="/map-hello" hx-swap="outerHTML" hx-trigger="click"></td>
-                            <!--<td id="target" class="map-width asteroid-cell">
-                            <form hx-put="/map-hello" hx-target="#target" hx-swap="outerHTML" hx-trigger="click"
-                            style="width:100%; height:100%;">
-                                <input type="hidden" name="type" value="asteroid"/>
-                            </form></td>-->
+                        <td class="map-width asteroid-cell" hx-put="/map-hello" hx-swap="outerHTML" hx-trigger="click" hx-vals='{"type":"asteroid-cell"}'></td>
                         {{- else if (eq .Type "MOON") -}}
                             <td class="map-width moon-cell"></td>
                         {{- else if (eq .Type "PLANET") -}}
