@@ -37,8 +37,9 @@ type mapInfo struct {
 func main() {
 	ticker := time.NewTicker(2001 * time.Millisecond)
 	data := dashboardData{}
+        /*
 	if agentName != "" {
-		/*var ships objects.AllShips
+		var ships objects.AllShips
 		json.Unmarshal(requests.ListMyShips(ticker).Bytes(), &ships)
 		data.Ships = ships.Ships
 		// Remove date from time stamp
@@ -53,19 +54,17 @@ func main() {
 			}
 			data.Ships[i].Nav.Route.Arrival = hms
 		}
-		*/
-		/*
-					var agent objects.AgentData
-			        json.Unmarshal(requests.ViewAgent(ticker).Bytes(), &agent)
-			        data.Agent = agent.Agent
-		*/
+            var agent objects.AgentData
+            json.Unmarshal(requests.ViewAgent(ticker).Bytes(), &agent)
+            data.Agent = agent.Agent
 	}
+        */
 
 	runServer(ticker, data)
 }
 
 func runServer(ticker *time.Ticker, data dashboardData) {
-	temIndex := template.Must(template.New("root.html").ParseFiles("html/root.html"))
+	temIndex := template.Must(template.New("root.gohtml").ParseFiles("gohtml/root.gohtml"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		err := temIndex.Execute(w, data)
 		if err != nil {
@@ -83,10 +82,10 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		http.ServeFile(w, r, "style.css")
 	})
 	http.HandleFunc("/about", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "html/about.html")
+		http.ServeFile(w, r, "gohtml/about.gohtml")
 	})
 	http.HandleFunc("/edit-agent", func(w http.ResponseWriter, r *http.Request) {
-		http.ServeFile(w, r, "html/edit-agent.html")
+		http.ServeFile(w, r, "gohtml/edit-agent.gohtml")
 	})
 
 	funcMaps := template.FuncMap{
@@ -98,7 +97,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 				`{"parent":[{"type":"`, cssClass, `-cell"},{"waypointIdx":"`, fmt.Sprint(idx), `"}]}`}, ""))
 		},
 	}
-	temMap := template.Must(template.New("map.html").Funcs(funcMaps).ParseFiles("html/map.html"))
+	temMap := template.Must(template.New("map.gohtml").Funcs(funcMaps).ParseFiles("gohtml/map.gohtml"))
 	http.HandleFunc("/map", func(w http.ResponseWriter, r *http.Request) {
 		// TODO: add system choice instead of hardcoding
 		system := "X1-V57"
@@ -211,7 +210,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		log.Fatal("map-describe: not a PUT")
 	})
 
-	temRegister := template.Must(template.New("register-form.html").ParseFiles("html/register-form.html"))
+	temRegister := template.Must(template.New("register-form.gohtml").ParseFiles("gohtml/register-form.gohtml"))
 	http.HandleFunc("/register-form", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
 			body, err := io.ReadAll(r.Body)
