@@ -93,9 +93,9 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		"increment": func(i int) int { return i + 1 },
 		"decrement": func(i int) int { return i - 1 },
 		"div":       func(a, b int) int { return a / b },
-		"asteroidVals": func(n int) template.HTMLAttr {
+		"jsonVals": func(cssClass string, idx int) template.HTMLAttr {
 			return template.HTMLAttr(strings.Join([]string{
-				`{"parent":[{"type":"asteroid-cell"},{"waypointSymbol":"`, fmt.Sprint(n), `"}]}`}, ""))
+				`{"parent":[{"type":"`, cssClass, `-cell"},{"waypointIdx":"`, fmt.Sprint(idx), `"}]}`}, ""))
 		},
 	}
 	temMap := template.Must(template.New("map.html").Funcs(funcMaps).ParseFiles("html/map.html"))
@@ -197,7 +197,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			line := lines[idx]
 			var waypoint objects.Waypoint
 			json.Unmarshal(line, &waypoint)
-			waypointDescription = fmt.Sprintf("%+v", waypoint)
+			waypointDescription = fmt.Sprintf("%v", waypoint)
 
 			_, err = w.Write([]byte(
 				strings.Join([]string{

@@ -39,28 +39,28 @@ table {
 .map-cell {
     height: 1em;
 }
-.planet-cell {
+.PLANET-cell {
     background-color: blue;
 }
-.moon-cell {
-    background-color: #00f000;
+.MOON-cell {
+    background-color: #0b0;
 }
-.asteroid-cell {
-    background-color: silver;
+.ASTEROID-cell {
+    background-color: #aaa;
 }
-.fuel-cell {
-    background-color: orange;
+.FUEL_STATION-cell {
+    background-color: #eea500;
 }
-.gate-cell {
+.JUMP_GATE-cell {
     background-color: fuchsia;
 }
-.asteroid-base-cell {
-    background-color: #0dd;
+.ASTEROID_BASE-cell {
+    background-color: #0bb;
 }
-.eng-asteroid-cell {
+.ENGINEERED_ASTEROID-cell {
     background-color: black;
 }
-.gas-giant-cell {
+.GAS_GIANT-cell {
     background-color: red;
 }
 .map-width {
