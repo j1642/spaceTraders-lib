@@ -52,17 +52,15 @@
         {{- $waypoints := .Waypoints -}}
         {{- $xRange := .XRange -}}
         {{- $foundMatch := false -}}
-        {{- $symbol := "" -}}
         {{- range .YRange -}}
         <tr class="map-height">
             {{- $curX = $minX -}}
             {{- range $xRange -}}
                 {{- $foundMatch = false -}}
-                {{- range $waypoints -}}
+                {{- range $idx, $unused := $waypoints -}}
                     {{- if (and (eq (div .X $divisor) $curX) (eq (div .Y $divisor) $curY)) -}}
-                        {{- $symbol = .Symbol -}}
                         {{- if (eq .Type "ASTEROID") -}}
-                        <td class="map-width asteroid-cell" hx-put="/map-describe" hx-swap="outerHTML" hx-trigger="click" hx-vals={{- asteroidVals $symbol -}}></td>
+                        <td class="map-width asteroid-cell" hx-put="/map-describe" hx-swap="outerHTML" hx-trigger="click" hx-vals={{- asteroidVals $idx -}}></td>
                         {{- else if (eq .Type "MOON") -}}
                             <td class="map-width moon-cell"></td>
                         {{- else if (eq .Type "PLANET") -}}

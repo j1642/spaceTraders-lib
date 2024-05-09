@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -92,13 +93,14 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		"increment": func(i int) int { return i + 1 },
 		"decrement": func(i int) int { return i - 1 },
 		"div":       func(a, b int) int { return a / b },
-		"asteroidVals": func(s string) template.HTMLAttr {
+		"asteroidVals": func(n int) template.HTMLAttr {
 			return template.HTMLAttr(strings.Join([]string{
-				`{"parent":[{"type":"asteroid-cell"},{"waypointSymbol":"`, s, `"}]}`}, ""))
+				`{"parent":[{"type":"asteroid-cell"},{"waypointSymbol":"`, fmt.Sprint(n), `"}]}`}, ""))
 		},
 	}
 	temMap := template.Must(template.New("map.html").Funcs(funcMaps).ParseFiles("html/map.html"))
 	http.HandleFunc("/map", func(w http.ResponseWriter, r *http.Request) {
+		// TODO: add system choice instead of hardcoding
 		system := "X1-V57"
 		contents, err := os.ReadFile(fmt.Sprintf("maps/%s.json", system))
 		if err != nil {
@@ -151,11 +153,11 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			}
 			split := strings.Split(string(body), "%22") // %22 is probably escaped quotation mark
 			celestialType := split[3]
-			waypointID := split[7]
+			waypointIdx := split[7]
 
 			_, err = w.Write([]byte(
 				strings.Join([]string{
-					`<td class="map-width bordered `, celestialType, `" hx-put="/map-describe" hx-trigger="click" hx-swap="outerHTML" hx-vals='{"parent":[{"type":"`, celestialType, `"},{"waypointSymbol":"`, waypointID, `"}]}'></td>`}, ""),
+					`<td class="map-width bordered `, celestialType, `" hx-put="/map-describe" hx-trigger="click" hx-swap="outerHTML" hx-vals='{"parent":[{"type":"`, celestialType, `"},{"waypointSymbol":"`, waypointIdx, `"}]}'></td>`}, ""),
 			))
 			if err != nil {
 				log.Fatal(err)
@@ -173,11 +175,33 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			}
 			split := strings.Split(string(body), "%22") // %22 is probably escaped quotation mark
 			celestialType := split[3]
-			waypointID := split[7]
+			waypointIdx := split[7]
+
+			system := "X1-V57"
+			contents, err := os.ReadFile(fmt.Sprintf("maps/%s.json", system))
+			if err != nil {
+				composites.StoreSystemWaypoints(system, ticker)
+				contents, err = os.ReadFile(fmt.Sprintf("maps/%s.json", system))
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			contents = bytes.Trim(contents, "\n")
+			lines := bytes.Split(contents, []byte("\n"))
+
+			var waypointDescription string
+			idx, err := strconv.Atoi(waypointIdx)
+			if err != nil {
+				log.Fatal(err)
+			}
+			line := lines[idx]
+			var waypoint objects.Waypoint
+			json.Unmarshal(line, &waypoint)
+			waypointDescription = fmt.Sprintf("%+v", waypoint)
 
 			_, err = w.Write([]byte(
 				strings.Join([]string{
-					`<td class="bordered" hx-put="/map-remove" hx-swap="outerHTML" hx-trigger="mouseleave" hx-vals='{"parent":[{"type":"`, celestialType, `"},{"waypointSymbol":"`, waypointID, `"}]}'>`, waypointID, `</td>`}, ""),
+					`<td class="bordered" hx-put="/map-remove" hx-swap="outerHTML" hx-trigger="mouseleave" hx-vals='{"parent":[{"type":"`, celestialType, `"},{"waypointSymbol":"`, waypointIdx, `"}]}'>`, waypointDescription, `</td>`}, ""),
 			))
 			if err != nil {
 				log.Fatal(err)
