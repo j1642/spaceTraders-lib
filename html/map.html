@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>&#x25B4 &#x25BE Map</title>
     <link rel="stylesheet" href="style.css">
-    <script type="text/javascript" src="htmx.min.js"></script>
+    <script type="text/javascript" src="htmx.js"></script>
 </head>
 
 <header>
@@ -52,7 +52,7 @@
         {{- $waypoints := .Waypoints -}}
         {{- $xRange := .XRange -}}
         {{- $foundMatch := false -}}
-        {{- $colspan := 0 -}}
+        {{- $symbol := "" -}}
         {{- range .YRange -}}
         <tr class="map-height">
             {{- $curX = $minX -}}
@@ -60,10 +60,9 @@
                 {{- $foundMatch = false -}}
                 {{- range $waypoints -}}
                     {{- if (and (eq (div .X $divisor) $curX) (eq (div .Y $divisor) $curY)) -}}
-                        <!--<td class="map-width" colspan="{{$colspan -}}"></td>
-                            - $colspan = 0 - -->
+                        {{- $symbol = .Symbol -}}
                         {{- if (eq .Type "ASTEROID") -}}
-                        <td class="map-width asteroid-cell" hx-put="/map-hello" hx-swap="outerHTML" hx-trigger="click" hx-vals='{"type":"asteroid-cell"}'></td>
+                        <td class="map-width asteroid-cell" hx-put="/map-describe" hx-swap="outerHTML" hx-trigger="click" hx-vals={{- asteroidVals $symbol -}}></td>
                         {{- else if (eq .Type "MOON") -}}
                             <td class="map-width moon-cell"></td>
                         {{- else if (eq .Type "PLANET") -}}
@@ -90,12 +89,10 @@
                     {{- end -}}
                 {{- end -}}
                 {{- if (eq $foundMatch false) -}}
-                <!-- - $colspan = increment $colspan - -->
                     <td class="map-width"></td>
                 {{- end -}}
                 {{- $curX = increment $curX -}}
             {{- end -}}
-            <td class="map-width" colspan="{{$colspan}}"></td>
             </tr>
             {{- $curY = decrement $curY -}}
         {{- end -}}

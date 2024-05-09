@@ -75,6 +75,9 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	http.HandleFunc("/htmx.min.js", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "htmx.min.js")
 	})
+	http.HandleFunc("/htmx.js", func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "htmx.js")
+	})
 	http.HandleFunc("/style.css", func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "style.css")
 	})
@@ -88,8 +91,11 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	funcMaps := template.FuncMap{
 		"increment": func(i int) int { return i + 1 },
 		"decrement": func(i int) int { return i - 1 },
-		"and3":      func(a, b, c bool) bool { return a && b && c },
 		"div":       func(a, b int) int { return a / b },
+		"asteroidVals": func(s string) template.HTMLAttr {
+			return template.HTMLAttr(strings.Join([]string{
+				`{"parent":[{"type":"asteroid-cell"},{"waypointSymbol":"`, s, `"}]}`}, ""))
+		},
 	}
 	temMap := template.Must(template.New("map.html").Funcs(funcMaps).ParseFiles("html/map.html"))
 	http.HandleFunc("/map", func(w http.ResponseWriter, r *http.Request) {
@@ -137,61 +143,48 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		}
 	})
 
-	http.HandleFunc("/map-hello", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "PUT" {
-			body, err := io.ReadAll(r.Body)
-			if err != nil {
-				log.Fatal(err)
-			}
-			var celestialType string
-			requestData := strings.Split(string(body), "&")
-			for i := range requestData {
-				attrValue := strings.Split(requestData[i], "=")
-				if attrValue[0] == "type" {
-					celestialType = attrValue[1]
-				}
-			}
-
-			_, err = w.Write([]byte(
-				strings.Join([]string{
-					`<td class="bordered" hx-put="/map-remove" hx-swap="outerHTML" hx-trigger="mouseleave" hx-vals='{"type":"`, celestialType, `"}'>Hello!</td>`,
-				}, ""),
-			))
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			return
-		}
-		log.Fatal("map-hello: not a PUT request")
-	})
-
 	http.HandleFunc("/map-remove", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
 			body, err := io.ReadAll(r.Body)
 			if err != nil {
 				log.Fatal(err)
 			}
-			var celestialType string
-			requestData := strings.Split(string(body), "&")
-			for i := range requestData {
-				attrValue := strings.Split(requestData[i], "=")
-				if attrValue[0] == "type" {
-					celestialType = attrValue[1]
-				}
-			}
+			split := strings.Split(string(body), "%22") // %22 is probably escaped quotation mark
+			celestialType := split[3]
+			waypointID := split[7]
 
 			_, err = w.Write([]byte(
 				strings.Join([]string{
-					`<td class="map-width bordered `, celestialType, `" hx-put="/map-hello" hx-trigger="click" hx-swap="outerHTML"></td>`}, ""),
+					`<td class="map-width bordered `, celestialType, `" hx-put="/map-describe" hx-trigger="click" hx-swap="outerHTML" hx-vals='{"parent":[{"type":"`, celestialType, `"},{"waypointSymbol":"`, waypointID, `"}]}'></td>`}, ""),
 			))
 			if err != nil {
 				log.Fatal(err)
 			}
-
 			return
 		}
 		log.Fatal("map-remove: not a PUT request")
+	})
+
+	http.HandleFunc("/map-describe", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "PUT" {
+			body, err := io.ReadAll(r.Body)
+			if err != nil {
+				log.Fatal(err)
+			}
+			split := strings.Split(string(body), "%22") // %22 is probably escaped quotation mark
+			celestialType := split[3]
+			waypointID := split[7]
+
+			_, err = w.Write([]byte(
+				strings.Join([]string{
+					`<td class="bordered" hx-put="/map-remove" hx-swap="outerHTML" hx-trigger="mouseleave" hx-vals='{"parent":[{"type":"`, celestialType, `"},{"waypointSymbol":"`, waypointID, `"}]}'>`, waypointID, `</td>`}, ""),
+			))
+			if err != nil {
+				log.Fatal(err)
+			}
+			return
+		}
+		log.Fatal("map-describe: not a PUT")
 	})
 
 	temRegister := template.Must(template.New("register-form.html").ParseFiles("html/register-form.html"))
