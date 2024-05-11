@@ -377,6 +377,12 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			} else {
 				log.Fatal("invalid new status", flipTo)
 			}
+			for i, ship := range data.Ships {
+				if ship.Symbol == shipName {
+					data.Ships[i].Nav.Status = flipTo
+					break
+				}
+			}
 
 			log.Println(shipName, flipTo)
 		}
