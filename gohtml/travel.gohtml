@@ -1,25 +1,26 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>&#x25B4 &#x25BE Travel</title>
-    <link rel="stylesheet" href="style.css">
-    <script type="text/javascript" src="htmx.js"></script>
-</head>
 <body>
-    <h1>Setting travel destination for {{.}}</h1>
+    {{- if eq .Ship.Nav.Status "DOCKED" -}}
+        <p><strong>{{.Ship.Symbol}} is docked and must be in orbit to travel</strong></p>
+    {{- else -}}
+        <p>Set travel destination for {{.Ship.Symbol}}</p>
+    {{- end -}}
+    <p>Current location: {{.Ship.Nav.SystemSymbol}}</p>
 
-    <label>Destination Type</label>
-    <select name="dest-type" hx-get="/travel" hx-taget="#destinations" hx-indicator="">
+    <label>Dest. Type</label>
+    <select name="dest-type" hx-get="/travel-filter-dests"
+        hx-vals='{"system":"{{- .Ship.Nav.SystemSymbol -}}"}'
+        hx-target="#dests">
         <option value="PLANET">Planet</option>
         <option value="MOON">Moon</option>
     </select>
-    <label>Destination ID</label>
-    <select id="destinations" name="dest-id">
-        {{- range $waypoints -}}
-            {{- if eq $waypoints.Type "PLANET" -}}
-                <option value="PLANET">{{- .Symbol -}}</option>
+
+    {{- $destType := .DestType -}}
+    <label>Dest. ID</label>
+    <select id="dests" name="dest-id">
+        {{- range .Waypoints -}}
+            {{- if eq .Type $destType -}}
+            <option value={{$destType}}>{{- .Symbol -}}</option>
             {{- end -}}
         {{- end -}}
     </select>

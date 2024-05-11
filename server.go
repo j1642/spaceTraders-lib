@@ -28,16 +28,20 @@ type dashboardData struct {
 	Ships []objects.Ship
 	Agent objects.Agent
 }
-
 type mapInfo struct {
 	MaxY, MinX, Divisor int
 	XRange, YRange      []bool
 	System              string
 	Waypoints           []objects.Waypoint
 }
+type travelInfo struct {
+	Ship      objects.Ship
+	Waypoints []objects.Waypoint
+	DestType  string
+}
 
 func main() {
-	ticker := time.NewTicker(1001 * time.Millisecond)
+	ticker := time.NewTicker(501 * time.Millisecond)
 	data := dashboardData{}
 	if agentName != "" {
 		var ships objects.AllShips
@@ -288,7 +292,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			w.Header().Add("HX-Trigger", "done")
 		}
 		progress := fmt.Sprint(progressBarPercent)
-		_, err := w.Write([]byte(strings.Join([]string{"<p>", progress, "</p>"}, "")))/*`<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="60" aria-valuenow="`, progress, `" aria-labelledby="pblabel">
+		_, err := w.Write([]byte(strings.Join([]string{"<p>", progress, "</p>"}, ""))) /*`<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="60" aria-valuenow="`, progress, `" aria-labelledby="pblabel">
 		  <div id="pb" class="progress-bar" style="height:20px; width:`, progress, `%"></div>
 		  </div>`}, ""),*/
 
@@ -310,6 +314,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 				if attrValue[0] == "agent" {
 					agentName = attrValue[1]
 					log.Println("agentName set to", agentName)
+					break
 				}
 			}
 			err = temRegister.Execute(w, agentName)
@@ -391,40 +396,67 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	temTravel := template.Must(template.New("travel.gohtml").ParseFiles("gohtml/travel.gohtml"))
 	http.HandleFunc("/travel", func(w http.ResponseWriter, r *http.Request) {
 		/* TODO:
-		   - show trip origin
-		   - show selected destination description
-		   - select destination with two drop-down menus
-		        - one for type, one for waypoint names of that type
+		            - bug: both travel buttons print CALLSIGN-1 in new header
+				   - show selected destination description
+		           - add button to confirm travel
+		           - add button to exit travel menu
 		*/
-		body, err := io.ReadAll(r.Body)
-		if err != nil {
-			log.Fatal(err)
-		}
-		requestData := strings.Split(string(body), "&")
-		var shipName string
-		for i := range requestData {
-			attrValue := strings.Split(requestData[i], "=")
-			if attrValue[0] == "ship" {
-				shipName = attrValue[1]
+		shipName := r.URL.Query().Get("ship")
+		destType := r.URL.Query().Get("dest-type")
+
+		// Isolate ship of interest
+		shipIdx := -1
+		for i, ship := range data.Ships {
+			if ship.Symbol == shipName {
+				shipIdx = i
+				break
 			}
-		}
-		err = temTravel.Execute(w, shipName)
-		if err != nil {
-			log.Fatal(err)
 		}
 
-		/*
-			contents, err := os.ReadFile(fmt.Sprintf("maps/%s.json", system))
-			if err != nil {
-				composites.StoreSystemWaypoints(system, ticker)
-				contents, err = os.ReadFile(fmt.Sprintf("maps/%s.json", system))
-				if err != nil {
-					log.Fatal(err)
-				}
+		waypoints := readSystemWaypointsFromFile(
+			data.Ships[shipIdx].Nav.SystemSymbol,
+			ticker,
+		)
+
+		if destType == "" {
+			destType = "PLANET"
+		}
+		travelInfo := travelInfo{
+			Ship:      data.Ships[shipIdx],
+			Waypoints: waypoints,
+			DestType:  destType,
+		}
+
+		err := temTravel.Execute(w, travelInfo)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	http.HandleFunc("/travel-filter-dests", func(w http.ResponseWriter, r *http.Request) {
+		// TODO: this response is not working
+		fmt.Println("entered /travel-filter-dests")
+
+		//shipName := r.URL.Query().Get("ship")
+		destType := r.URL.Query().Get("dest-type")
+		system := r.URL.Query().Get("system")
+
+		waypoints := readSystemWaypointsFromFile(system, ticker)
+
+		message := make([]byte, 0)
+		for _, waypoint := range waypoints {
+			if waypoint.Type == destType {
+				s := strings.Join([]string{
+					`<option value="`, waypoint.Symbol, `">`, waypoint.Symbol, `</option>`,
+				}, "")
+				message = append(message, []byte(s)...)
 			}
-			contents = bytes.Trim(contents, "\n")
-			lines := bytes.Split(contents, []byte("\n"))
-		*/
+		}
+
+		_, err := w.Write(message)
+		if err != nil {
+			log.Fatal(err)
+		}
 	})
 
 	fmt.Println("Server listening on 8080")
@@ -440,4 +472,26 @@ func getAgentName() string {
 	lines := strings.Split(string(contents), "\n")
 	agent = strings.Split(lines[0], "-")[0]
 	return agent
+}
+
+// Return slice of system waypoints
+func readSystemWaypointsFromFile(system string, ticker *time.Ticker) []objects.Waypoint {
+	contents, err := os.ReadFile(fmt.Sprintf("maps/%s.json", system))
+	if err != nil {
+		composites.StoreSystemWaypoints(system, ticker)
+		contents, err = os.ReadFile(fmt.Sprintf("maps/%s.json", system))
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+	contents = bytes.Trim(contents, "\n")
+	lines := bytes.Split(contents, []byte("\n"))
+	waypoints := make([]objects.Waypoint, 0)
+	for _, line := range lines {
+		var waypoint objects.Waypoint
+		json.Unmarshal(line, &waypoint)
+		waypoints = append(waypoints, waypoint)
+	}
+
+	return waypoints
 }
