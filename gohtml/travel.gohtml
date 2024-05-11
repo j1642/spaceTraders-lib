@@ -5,23 +5,34 @@
     {{- else -}}
         <p>Set travel destination for {{.Ship.Symbol}}</p>
     {{- end -}}
-    <p>Current location: {{.Ship.Nav.SystemSymbol}}</p>
+    <p>Current location: {{.Ship.Nav.WaypointSymbol}}</p>
 
-    <label>Dest. Type</label>
-    <select name="dest-type" hx-get="/travel-filter-dests"
-        hx-vals='{"system":"{{- .Ship.Nav.SystemSymbol -}}"}'
-        hx-target="#dests">
-        <option value="PLANET">Planet</option>
-        <option value="MOON">Moon</option>
-    </select>
+    <form hx-put="/execute-trip" hx-target="this" hx-swap="outerHTML">
+        <input type="hidden" name="ship" value="{{.Ship.Symbol}}"/>
+        <label>Dest. Type</label>
+        <select name="dest-type" hx-get="/travel-filter-dests"
+            hx-vals='{"system":"{{- .Ship.Nav.SystemSymbol -}}"}'
+            hx-swap="innerHTML"
+            hx-target="#dests">
+            <option value="PLANET">Planet</option>
+            <option value="MOON">Moon</option>
+            <option value="ENGINEERED_ASTEROID">Eng. Asteroid</option>
+            <option value="ASTEROID">Asteroid</option>
+            <option value="FUEL_STATION">Fuel Station</option>
+            <option value="JUMP_GATE">Jump Gate</option>
+            <option value="ASTEROID_BASE">Asteroid Base</option>
+            <option value="GAS_GIANT">Gas Giant</option>
+        </select>
 
-    {{- $destType := .DestType -}}
-    <label>Dest. ID</label>
-    <select id="dests" name="dest-id">
-        {{- range .Waypoints -}}
-            {{- if eq .Type $destType -}}
-            <option value={{$destType}}>{{- .Symbol -}}</option>
+        <label>Dest. ID</label>
+        <select id="dests" name="dest-id">
+            {{- range .Waypoints -}}
+                {{- if eq .Type "PLANET" -}}
+                <option value={{.Symbol}}>{{.Symbol}}</option>
+                {{- end -}}
             {{- end -}}
-        {{- end -}}
-    </select>
+        </select>
+
+        <button>Submit</button>
+    </form>
 </body>

@@ -37,7 +37,6 @@ type mapInfo struct {
 type travelInfo struct {
 	Ship      objects.Ship
 	Waypoints []objects.Waypoint
-	DestType  string
 }
 
 func main() {
@@ -47,16 +46,10 @@ func main() {
 		var ships objects.AllShips
 		json.Unmarshal(requests.ListMyShips(ticker).Bytes(), &ships)
 		data.Ships = ships.Ships
-		// Remove date from time stamp
+		// Remove date from time stamps
 		for i := range data.Ships {
-			_, hms, isCut := strings.Cut(data.Ships[i].Nav.Route.Arrival, "T")
-			if !isCut {
-				log.Fatal("Missing T in", data.Ships[i].Nav.Route.Arrival)
-			}
-			hms, _, isCut = strings.Cut(hms, ".")
-			if !isCut {
-				log.Fatal("Missing . in", data.Ships[i].Nav.Route.Arrival)
-			}
+			_, hms, _ := strings.Cut(data.Ships[i].Nav.Route.Arrival, "T")
+			hms, _, _ = strings.Cut(hms, ".")
 			data.Ships[i].Nav.Route.Arrival = hms
 		}
 		/*
@@ -142,8 +135,8 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		// TODO - finish map
 		// TODO: account overlapping sites, like moons with same coords
 		divisor := 10
-		//systemInfo := mapInfo{Divisor: divisor, MaxY: maxY / divisor, MinX: minX / divisor, XRange: make([]bool, (maxX-minX+1)/divisor), YRange: make([]bool, (maxY-minY+1)/divisor), System: system, Waypoints: waypoints}
-		systemInfo := mapInfo{Divisor: divisor, MaxY: maxY / divisor, MinX: minX / divisor, XRange: make([]bool, (maxX+1)/divisor), YRange: make([]bool, (maxY+1)/divisor), System: system, Waypoints: waypoints}
+		systemInfo := mapInfo{Divisor: divisor, MaxY: maxY / divisor, MinX: minX / divisor, XRange: make([]bool, (maxX-minX+1)/divisor), YRange: make([]bool, (maxY-minY+1)/divisor), System: system, Waypoints: waypoints}
+		//systemInfo := mapInfo{Divisor: divisor, MaxY: maxY / divisor, MinX: minX / divisor, XRange: make([]bool, (maxX+1)/divisor), YRange: make([]bool, (maxY+1)/divisor), System: system, Waypoints: waypoints}
 		err = temMap.Execute(w, systemInfo)
 		if err != nil {
 			log.Fatal(err)
@@ -396,13 +389,11 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	temTravel := template.Must(template.New("travel.gohtml").ParseFiles("gohtml/travel.gohtml"))
 	http.HandleFunc("/travel", func(w http.ResponseWriter, r *http.Request) {
 		/* TODO:
-		            - bug: both travel buttons print CALLSIGN-1 in new header
-				   - show selected destination description
-		           - add button to confirm travel
-		           - add button to exit travel menu
+						   - show selected destination description
+				           - add button to exit travel menu
+		                   - timer during travel
 		*/
 		shipName := r.URL.Query().Get("ship")
-		destType := r.URL.Query().Get("dest-type")
 
 		// Isolate ship of interest
 		shipIdx := -1
@@ -418,15 +409,10 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			ticker,
 		)
 
-		if destType == "" {
-			destType = "PLANET"
-		}
 		travelInfo := travelInfo{
 			Ship:      data.Ships[shipIdx],
 			Waypoints: waypoints,
-			DestType:  destType,
 		}
-
 		err := temTravel.Execute(w, travelInfo)
 		if err != nil {
 			log.Fatal(err)
@@ -434,10 +420,6 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	})
 
 	http.HandleFunc("/travel-filter-dests", func(w http.ResponseWriter, r *http.Request) {
-		// TODO: this response is not working
-		fmt.Println("entered /travel-filter-dests")
-
-		//shipName := r.URL.Query().Get("ship")
 		destType := r.URL.Query().Get("dest-type")
 		system := r.URL.Query().Get("system")
 
@@ -457,6 +439,52 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		if err != nil {
 			log.Fatal(err)
 		}
+	})
+
+	http.HandleFunc("/execute-trip", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		requestData := strings.Split(string(body), "&")
+		var shipName string
+		var destID string
+		for i := range requestData {
+			attrValue := strings.Split(requestData[i], "=")
+			if attrValue[0] == "ship" {
+				shipName = attrValue[1]
+			} else if attrValue[0] == "dest-id" {
+				destID = attrValue[1]
+			}
+		}
+
+		// Check that there is enough info to travel
+		if shipName == "" || destID == "" {
+			log.Printf("travel error: ship=%s, dest=%s", shipName, destID)
+			return
+		}
+
+		reply := requests.TravelTo(shipName, destID, ticker)
+		travelMsg := objects.TravelData{}
+		err = json.Unmarshal(reply.Bytes(), &travelMsg)
+		if err != nil {
+			panic(err)
+		}
+
+		// Update root data, displays when the page is refreshed
+		for i, ship := range data.Ships {
+			if ship.Symbol == shipName {
+				data.Ships[i].Fuel = travelMsg.Travel.Fuel
+				data.Ships[i].Nav = travelMsg.Travel.Nav
+				break
+			}
+		}
+
+		_, arrival, _ := strings.Cut(travelMsg.Travel.Nav.Route.Arrival, "T")
+		arrival, _, _ = strings.Cut(arrival, ".")
+		log.Printf("%s travels to %s (%s), arriving %s\n",
+			shipName, destID, travelMsg.Travel.Nav.Route.Destination.Type, arrival,
+		)
 	})
 
 	fmt.Println("Server listening on 8080")
