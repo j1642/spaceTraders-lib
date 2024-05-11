@@ -98,6 +98,24 @@
                     <td>{{.Engine.Speed}}</td>
                 {{end}}
             </tr>
+            <tr><th>Travel</th>
+                {{- range .Ships -}}
+                    <td><button hx-get="/travel" hx-vals='{"ship":"{{- .Symbol -}}"}'>Travel</button></td>
+                {{- end -}}
+            </tr>
+            <tr><th>Actions</th>
+                {{- range $idx, $ship := .Ships -}}
+                    {{- $foundMiningLaser := false -}}
+                    {{- range .Mounts }}
+                        {{- if eq "MOUNT_MINING_LASER_II" .Symbol -}}
+                            <!--TODO: generalize by using a funcMap func to remove the numeral suffix-->
+                            <td>Mine</td>
+                            {{- $foundMiningLaser = true -}}
+                            {{- break -}}
+                        {{- end -}}
+                    {{- end -}}
+                {{- end -}}
+            </tr>
         </tbody>
     </table>
 

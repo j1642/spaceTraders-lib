@@ -22,6 +22,8 @@ import (
 
 var agentName string = getAgentName()
 
+var progressBarPercent int
+
 type dashboardData struct {
 	Ships []objects.Ship
 	Agent objects.Agent
@@ -35,9 +37,8 @@ type mapInfo struct {
 }
 
 func main() {
-	ticker := time.NewTicker(2001 * time.Millisecond)
+	ticker := time.NewTicker(1001 * time.Millisecond)
 	data := dashboardData{}
-        /*
 	if agentName != "" {
 		var ships objects.AllShips
 		json.Unmarshal(requests.ListMyShips(ticker).Bytes(), &ships)
@@ -54,11 +55,12 @@ func main() {
 			}
 			data.Ships[i].Nav.Route.Arrival = hms
 		}
-            var agent objects.AgentData
-            json.Unmarshal(requests.ViewAgent(ticker).Bytes(), &agent)
-            data.Agent = agent.Agent
+		/*
+		   var agent objects.AgentData
+		   json.Unmarshal(requests.ViewAgent(ticker).Bytes(), &agent)
+		   data.Agent = agent.Agent
+		*/
 	}
-        */
 
 	runServer(ticker, data)
 }
@@ -210,6 +212,91 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		log.Fatal("map-describe: not a PUT")
 	})
 
+	// TODO progress bar testing for extraction cooldown
+	http.HandleFunc("/progress-bar", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte(
+			`<!DOCTYPE html>
+            <head>
+                <script type="text/javascript" src="htmx.min.js"></script>
+                <link rel="stylesheet" href="style.css">
+            </head>
+            <div hx-target="this" hx-swap="outerHTML">
+            <h3>Start Progress</h3>
+            <button hx-target="this" hx-swap="outerHTML" hx-post="/start">
+                    Start Job
+            </button>
+            </div>`,
+		))
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+	// TODO progress bar testing for extraction cooldown
+	http.HandleFunc("/start", func(w http.ResponseWriter, r *http.Request) {
+		progressBarPercent = 4
+		_, err := w.Write([]byte(
+			`<!DOCTYPE html>
+            <head>
+                <script type="text/javascript" src="htmx.min.js"></script>
+                <link rel="stylesheet" href="style.css">
+            </head>
+            <div hx-trigger="done" hx-get="/job" hx-swap="outerHTML" hx-target="this">
+              <h3 role="status" id="pblabel" tabindex="-1" autofocus>Running</h3>
+
+              <div
+                hx-get="/job/progress"
+                hx-trigger="every 600ms"
+                hx-target="this"
+                hx-swap="innerHTML">
+                <!--<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="60" aria-valuenow="0" aria-labelledby="pblabel">
+                  <div id="pb" class="progress-bar" style="width:0%"></div>
+              </div>-->
+            </div>`,
+		))
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+	http.HandleFunc("/job", func(w http.ResponseWriter, r *http.Request) {
+		_, err := w.Write([]byte(
+			`<!DOCTYPE html>
+            <head>
+                <script type="text/javascript" src="htmx.min.js"></script>
+                <link rel="stylesheet" href="style.css">
+            </head>
+            <div hx-trigger="done" hx-get="/job" hx-swap="outerHTML" hx-target="this">
+              <button id="restart-btn" class="btn" hx-post="/start" classes="add show:600ms">
+                Restart Job
+              </button>
+
+              <!--<div
+                hx-get="/job/progress"
+                hx-trigger="none"
+                hx-target="this"
+                hx-swap="innerHTML">
+                <p>Ready</p>
+              </div>-->
+            </div>`,
+		))
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+	http.HandleFunc("/job/progress", func(w http.ResponseWriter, r *http.Request) {
+		progressBarPercent -= 1
+		if progressBarPercent == 0 {
+			w.Header().Add("HX-Trigger", "done")
+		}
+		progress := fmt.Sprint(progressBarPercent)
+		_, err := w.Write([]byte(strings.Join([]string{"<p>", progress, "</p>"}, "")))/*`<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="60" aria-valuenow="`, progress, `" aria-labelledby="pblabel">
+		  <div id="pb" class="progress-bar" style="height:20px; width:`, progress, `%"></div>
+		  </div>`}, ""),*/
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
 	temRegister := template.Must(template.New("register-form.gohtml").ParseFiles("gohtml/register-form.gohtml"))
 	http.HandleFunc("/register-form", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
@@ -293,6 +380,45 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 
 			log.Println(shipName, flipTo)
 		}
+	})
+
+	temTravel := template.Must(template.New("travel.gohtml").ParseFiles("gohtml/travel.gohtml"))
+	http.HandleFunc("/travel", func(w http.ResponseWriter, r *http.Request) {
+		/* TODO:
+		   - show trip origin
+		   - show selected destination description
+		   - select destination with two drop-down menus
+		        - one for type, one for waypoint names of that type
+		*/
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		requestData := strings.Split(string(body), "&")
+		var shipName string
+		for i := range requestData {
+			attrValue := strings.Split(requestData[i], "=")
+			if attrValue[0] == "ship" {
+				shipName = attrValue[1]
+			}
+		}
+		err = temTravel.Execute(w, shipName)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		/*
+			contents, err := os.ReadFile(fmt.Sprintf("maps/%s.json", system))
+			if err != nil {
+				composites.StoreSystemWaypoints(system, ticker)
+				contents, err = os.ReadFile(fmt.Sprintf("maps/%s.json", system))
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			contents = bytes.Trim(contents, "\n")
+			lines := bytes.Split(contents, []byte("\n"))
+		*/
 	})
 
 	fmt.Println("Server listening on 8080")

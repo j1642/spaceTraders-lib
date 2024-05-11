@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>&#x25B4 &#x25BE Travel</title>
+    <link rel="stylesheet" href="style.css">
+    <script type="text/javascript" src="htmx.js"></script>
+</head>
+<body>
+    <h1>Setting travel destination for {{.}}</h1>
+
+    <label>Destination Type</label>
+    <select name="dest-type" hx-get="/travel" hx-taget="#destinations" hx-indicator="">
+        <option value="PLANET">Planet</option>
+        <option value="MOON">Moon</option>
+    </select>
+    <label>Destination ID</label>
+    <select id="destinations" name="dest-id">
+        {{- range $waypoints -}}
+            {{- if eq $waypoints.Type "PLANET" -}}
+                <option value="PLANET">{{- .Symbol -}}</option>
+            {{- end -}}
+        {{- end -}}
+    </select>
+</body>
