@@ -244,47 +244,22 @@ func ConductSurvey(ship string, ticker *time.Ticker) *bytes.Buffer {
 	return body
 }
 
-func ExtractOre(ship string, repeat int, ticker *time.Ticker) {
-	//jsonContent := []byte(`{"survey": "X1-ZA40-99095A-172ABE"}`)
-
+func ExtractOre(ship string, ticker *time.Ticker) objects.ExtractionData {
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/extract"}
 	url := strings.Join(urlPieces, "")
 	req := makeRequest("POST", url, nil)
-	//req.Header.Set("Content-Type", "application/json")
 
-	for i := 0; i < repeat; i++ {
-		shipData := DescribeShip(ship, ticker).Ship
-		cargo := &shipData.Cargo
-		if cargo.Units == cargo.Capacity {
-			fmt.Println(ship, "cargo full")
-			return
-		}
-
-		resp := sendRequest(req, ticker)
-		body := readResponse(resp)
-		extractMsg := objects.ExtractionData{}
-		err := json.Unmarshal(body.Bytes(), &extractMsg)
-		if err != nil {
-			panic(err)
-		}
-
-		// Error code 4000: cooldownConflictError
-		// Error code 4236: shipNotInOrbitError
-		if extractMsg.ErrBody.Code == 4000 {
-			time.Sleep(time.Second *
-				time.Duration(extractMsg.ErrBody.Data.Cooldown.RemainingSeconds))
-			continue
-		} else if extractMsg.ErrBody.Code == 4236 {
-			Orbit(ship, ticker)
-			continue
-		}
-
-		cargo.Units += extractMsg.ExtractBody.Extraction.Yield.Units
-		fmt.Println(ship, "extracting...", "cargo", cargo.Units, "/", cargo.Capacity)
-
-		time.Sleep(time.Second *
-			time.Duration(extractMsg.ExtractBody.Cooldown.RemainingSeconds))
+	resp := sendRequest(req, ticker)
+	body := readResponse(resp)
+	extractMsg := objects.ExtractionData{}
+	err := json.Unmarshal(body.Bytes(), &extractMsg)
+	if err != nil {
+		panic(err)
 	}
+
+	return extractMsg
+	// Error code 4000: cooldownConflictError
+	// Error code 4236: shipNotInOrbitError
 }
 
 func Orbit(ship string, ticker *time.Ticker) {

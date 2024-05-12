@@ -132,7 +132,7 @@ func gather(material string, ticker *time.Ticker) {
 	// TODO: add channel for survey target if it contains desirable resources.
 	for {
 		ship := miningShips[0]
-		requests.ExtractOre(ship, 3, ticker)
+		repeatExtractOre(ship, 3, ticker)
 		shipData := requests.DescribeShip(ship, ticker).Ship
 		fuelPercent := float64(shipData.Fuel.Current) / float64(shipData.Fuel.Capacity)
 		if fuelPercent < 0.5 {
@@ -160,7 +160,7 @@ func gather(material string, ticker *time.Ticker) {
 func collectAndDeliverMaterial(ship, material string, wg *sync.WaitGroup, ticker *time.Ticker) {
 	wg.Add(1)
 	for i := 0; i < 500; i++ {
-		requests.ExtractOre(ship, 3, ticker)
+		repeatExtractOre(ship, 3, ticker)
 		requests.DockShip(ship, ticker)
 		sellCargoBesidesMaterial(ship, material, ticker)
 		requests.Orbit(ship, ticker)
@@ -476,5 +476,35 @@ func StoreSystemWaypoints(system string, ticker *time.Ticker) {
 			}
 			fmt.Println("wrote to file:", place.Symbol)
 		}
+	}
+}
+
+func repeatExtractOre(ship string, repeat int, ticker *time.Ticker) {
+	for i := 0; i < repeat; i++ {
+		shipData := requests.DescribeShip(ship, ticker).Ship
+		cargo := &shipData.Cargo
+		if cargo.Units == cargo.Capacity {
+			fmt.Println(ship, "cargo full")
+			return
+		}
+
+		extractMsg := requests.ExtractOre(ship, ticker)
+
+		// Error code 4000: cooldownConflictError
+		// Error code 4236: shipNotInOrbitError
+		if extractMsg.ErrBody.Code == 4000 {
+			time.Sleep(time.Second *
+				time.Duration(extractMsg.ErrBody.Data.Cooldown.RemainingSeconds))
+			continue
+		} else if extractMsg.ErrBody.Code == 4236 {
+			requests.Orbit(ship, ticker)
+			continue
+		}
+
+		cargo.Units += extractMsg.ExtractBody.Extraction.Yield.Units
+		fmt.Println(ship, "extracting...", "cargo", cargo.Units, "/", cargo.Capacity)
+
+		time.Sleep(time.Second *
+			time.Duration(extractMsg.ExtractBody.Cooldown.RemainingSeconds))
 	}
 }
