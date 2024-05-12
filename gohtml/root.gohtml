@@ -99,8 +99,8 @@
                 {{end}}
             </tr>
             <tr><th>Travel</th>
-                {{- range .Ships -}}
-                    <td><button hx-get="/travel" hx-swap="outerHTML"
+                {{- range $idx, $unused := .Ships -}}
+                    <td id="td-travel-{{$idx}}"><button hx-get="/travel" hx-swap="outerHTML"
                         hx-vals='{"ship":"{{- .Symbol -}}"}'>
                         Travel</button>
                     </td>

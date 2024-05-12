@@ -63,6 +63,8 @@ func main() {
 }
 
 func runServer(ticker *time.Ticker, data dashboardData) {
+	travelDurations := make([]int, len(data.Ships))
+
 	temIndex := template.Must(template.New("root.gohtml").ParseFiles("gohtml/root.gohtml"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		err := temIndex.Execute(w, data)
@@ -209,91 +211,6 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		log.Fatal("map-describe: not a PUT")
 	})
 
-	// TODO progress bar testing for extraction cooldown
-	http.HandleFunc("/progress-bar", func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte(
-			`<!DOCTYPE html>
-            <head>
-                <script type="text/javascript" src="htmx.min.js"></script>
-                <link rel="stylesheet" href="style.css">
-            </head>
-            <div hx-target="this" hx-swap="outerHTML">
-            <h3>Start Progress</h3>
-            <button hx-target="this" hx-swap="outerHTML" hx-post="/start">
-                    Start Job
-            </button>
-            </div>`,
-		))
-		if err != nil {
-			log.Fatal(err)
-		}
-	})
-	// TODO progress bar testing for extraction cooldown
-	http.HandleFunc("/start", func(w http.ResponseWriter, r *http.Request) {
-		progressBarPercent = 4
-		_, err := w.Write([]byte(
-			`<!DOCTYPE html>
-            <head>
-                <script type="text/javascript" src="htmx.min.js"></script>
-                <link rel="stylesheet" href="style.css">
-            </head>
-            <div hx-trigger="done" hx-get="/job" hx-swap="outerHTML" hx-target="this">
-              <h3 role="status" id="pblabel" tabindex="-1" autofocus>Running</h3>
-
-              <div
-                hx-get="/job/progress"
-                hx-trigger="every 600ms"
-                hx-target="this"
-                hx-swap="innerHTML">
-                <!--<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="60" aria-valuenow="0" aria-labelledby="pblabel">
-                  <div id="pb" class="progress-bar" style="width:0%"></div>
-              </div>-->
-            </div>`,
-		))
-		if err != nil {
-			log.Fatal(err)
-		}
-	})
-	http.HandleFunc("/job", func(w http.ResponseWriter, r *http.Request) {
-		_, err := w.Write([]byte(
-			`<!DOCTYPE html>
-            <head>
-                <script type="text/javascript" src="htmx.min.js"></script>
-                <link rel="stylesheet" href="style.css">
-            </head>
-            <div hx-trigger="done" hx-get="/job" hx-swap="outerHTML" hx-target="this">
-              <button id="restart-btn" class="btn" hx-post="/start" classes="add show:600ms">
-                Restart Job
-              </button>
-
-              <!--<div
-                hx-get="/job/progress"
-                hx-trigger="none"
-                hx-target="this"
-                hx-swap="innerHTML">
-                <p>Ready</p>
-              </div>-->
-            </div>`,
-		))
-		if err != nil {
-			log.Fatal(err)
-		}
-	})
-	http.HandleFunc("/job/progress", func(w http.ResponseWriter, r *http.Request) {
-		progressBarPercent -= 1
-		if progressBarPercent == 0 {
-			w.Header().Add("HX-Trigger", "done")
-		}
-		progress := fmt.Sprint(progressBarPercent)
-		_, err := w.Write([]byte(strings.Join([]string{"<p>", progress, "</p>"}, ""))) /*`<div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="60" aria-valuenow="`, progress, `" aria-labelledby="pblabel">
-		  <div id="pb" class="progress-bar" style="height:20px; width:`, progress, `%"></div>
-		  </div>`}, ""),*/
-
-		if err != nil {
-			log.Fatal(err)
-		}
-	})
-
 	temRegister := template.Must(template.New("register-form.gohtml").ParseFiles("gohtml/register-form.gohtml"))
 	http.HandleFunc("/register-form", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "PUT" {
@@ -387,11 +304,12 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	})
 
 	temTravel := template.Must(template.New("travel.gohtml").ParseFiles("gohtml/travel.gohtml"))
+	// Provide travel menu after Travel button is clicked
 	http.HandleFunc("/travel", func(w http.ResponseWriter, r *http.Request) {
 		/* TODO:
-						   - show selected destination description
-				           - add button to exit travel menu
-		                   - timer during travel
+				   - show selected destination description
+				   - add button to exit travel menu
+		           - add button to travel while traveling, to correct a wrong route
 		*/
 		shipName := r.URL.Query().Get("ship")
 
@@ -419,6 +337,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		}
 	})
 
+	// Return all system waypoints of a certain Type as <options>
 	http.HandleFunc("/travel-filter-dests", func(w http.ResponseWriter, r *http.Request) {
 		destType := r.URL.Query().Get("dest-type")
 		system := r.URL.Query().Get("system")
@@ -441,6 +360,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		}
 	})
 
+	// Send the travel HTTP request to the Spacetraders API and housekeeping
 	http.HandleFunc("/execute-trip", func(w http.ResponseWriter, r *http.Request) {
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
@@ -471,20 +391,95 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			panic(err)
 		}
 
-		// Update root data, displays when the page is refreshed
-		for i, ship := range data.Ships {
-			if ship.Symbol == shipName {
-				data.Ships[i].Fuel = travelMsg.Travel.Fuel
-				data.Ships[i].Nav = travelMsg.Travel.Nav
-				break
-			}
-		}
-
+		// Log trip
 		_, arrival, _ := strings.Cut(travelMsg.Travel.Nav.Route.Arrival, "T")
 		arrival, _, _ = strings.Cut(arrival, ".")
 		log.Printf("%s travels to %s (%s), arriving %s\n",
 			shipName, destID, travelMsg.Travel.Nav.Route.Destination.Type, arrival,
 		)
+
+		// Update root data, displays when the page is refreshed
+		shipIdx := -1
+		for i, ship := range data.Ships {
+			if ship.Symbol == shipName {
+				shipIdx = i
+				data.Ships[i].Fuel = travelMsg.Travel.Fuel
+				data.Ships[i].Nav = travelMsg.Travel.Nav
+				data.Ships[i].Nav.Route.Arrival = arrival
+				break
+			}
+		}
+
+		// Get time info for travel countdown
+		format := "2006-01-02T15:04:05.000Z"
+		start, err := time.Parse(format, travelMsg.Travel.Nav.Route.DepartureTime)
+		if err != nil {
+			log.Println("Failed to parse time: likely trying to travel from/to the same place")
+			return
+		}
+		end, err := time.Parse(format, travelMsg.Travel.Nav.Route.Arrival)
+		if err != nil {
+			panic(err)
+		}
+
+		travelDuration := end.Sub(start).Round(time.Second).Seconds()
+		travelDurations[shipIdx] = int(travelDuration)
+
+		_, err = w.Write([]byte(
+			`<div hx-trigger="end-countdown" hx-get="/fresh-travel-button"
+            hx-swap="innerHTML"
+            hx-target="#td-travel-` + fmt.Sprint(shipIdx) + `"
+            hx-vals={"ship":"` + shipName + `"}>
+              <p role="status" id="pblabel" tabindex="-1" autofocus>Traveling</p>
+
+              <div
+                hx-get="/countdown-progress"
+                hx-trigger="every 1s"
+                hx-target="this"
+                hx-swap="innerHTML"
+                hx-vals='{"shipIdx":"` + fmt.Sprint(shipIdx) + `"}'>
+              </div>
+            </div>`,
+		))
+	})
+
+	// Decrement the travel countdown of a particular ship
+	http.HandleFunc("/countdown-progress", func(w http.ResponseWriter, r *http.Request) {
+		shipIdxStr := r.URL.Query().Get("shipIdx")
+		shipIdx, err := strconv.Atoi(shipIdxStr)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		travelDurations[shipIdx] -= 1
+		if travelDurations[shipIdx] <= 0 {
+			travelDurations[shipIdx] = 0
+			w.Header().Add("HX-Trigger", "end-countdown")
+		}
+		progress := fmt.Sprint(travelDurations[shipIdx])
+		_, err = w.Write([]byte(strings.Join([]string{"<p>", progress, "</p>"}, "")))
+
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	// Return a travel <button> for a given ship
+	http.HandleFunc("/fresh-travel-button", func(w http.ResponseWriter, r *http.Request) {
+		shipName := r.URL.Query().Get("ship")
+		if shipName == "" {
+			log.Fatal("shipName is empty")
+		}
+
+		_, err := w.Write([]byte(`
+        <td><button hx-get="/travel" hx-swap="outerHTML"
+            hx-vals='{"ship":"` + shipName + `"}'>
+            Travel</button>
+        </td>`,
+		))
+		if err != nil {
+			log.Fatal(err)
+		}
 	})
 
 	fmt.Println("Server listening on 8080")
