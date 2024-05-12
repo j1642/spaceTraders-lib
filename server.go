@@ -40,7 +40,7 @@ type travelInfo struct {
 }
 
 func main() {
-	ticker := time.NewTicker(501 * time.Millisecond)
+	ticker := time.NewTicker(2001 * time.Millisecond)
 	data := dashboardData{}
 	if agentName != "" {
 		var ships objects.AllShips
@@ -64,6 +64,7 @@ func main() {
 
 func runServer(ticker *time.Ticker, data dashboardData) {
 	travelDurations := make([]int, len(data.Ships))
+	extractCooldowns := make([]int, len(data.Ships))
 
 	temIndex := template.Must(template.New("root.gohtml").ParseFiles("gohtml/root.gohtml"))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -434,7 +435,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 
               <div
                 hx-get="/countdown-progress"
-                hx-trigger="every 1s"
+                hx-trigger="every 2s"
                 hx-target="this"
                 hx-swap="innerHTML"
                 hx-vals='{"shipIdx":"` + fmt.Sprint(shipIdx) + `"}'>
@@ -451,13 +452,13 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			log.Fatal(err)
 		}
 
-		travelDurations[shipIdx] -= 1
+		travelDurations[shipIdx] -= 2
 		if travelDurations[shipIdx] <= 0 {
 			travelDurations[shipIdx] = 0
 			w.Header().Add("HX-Trigger", "end-countdown")
 		}
 		progress := fmt.Sprint(travelDurations[shipIdx])
-		_, err = w.Write([]byte(strings.Join([]string{"<p>", progress, "</p>"}, "")))
+		_, err = w.Write([]byte(strings.Join([]string{"<p>", progress, "s</p>"}, "")))
 
 		if err != nil {
 			log.Fatal(err)
@@ -476,6 +477,83 @@ func runServer(ticker *time.Ticker, data dashboardData) {
             hx-vals='{"ship":"` + shipName + `"}'>
             Travel</button>
         </td>`,
+		))
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	http.HandleFunc("/extract", func(w http.ResponseWriter, r *http.Request) {
+		// TODO: finish
+		shipName := r.URL.Query().Get("ship")
+
+		// Isolate ship of interest
+		shipIdx := -1
+		for i, ship := range data.Ships {
+			if ship.Symbol == shipName {
+				shipIdx = i
+				break
+			}
+		}
+		if shipIdx == -1 {
+			log.Println("/extract failed, shipIdx=-1")
+			return
+		}
+
+		extractMsg := requests.ExtractOre(data.Ships[shipIdx].Symbol, ticker)
+		extractCooldowns[shipIdx] = extractMsg.ExtractBody.Cooldown.RemainingSeconds
+		// TODO: Can HTMX update the Cargo <td> and the Extract <td>?
+		data.Ships[shipIdx].Cargo = extractMsg.ExtractBody.Cargo
+		fmt.Printf("%+v\n", extractMsg)
+
+		_, err := w.Write([]byte(
+			`<div hx-trigger="extract-end-cooldown" hx-get="/extract-new-button"
+            hx-swap="innerHTML"
+            hx-target="#td-extract-` + fmt.Sprint(shipIdx) + `"
+            hx-vals={"ship":"` + shipName + `"}>
+              <p>Cooldown</p>
+              <div
+                hx-get="/extract-cooldown-decrement"
+                hx-trigger="every 2s"
+                hx-target="this"
+                hx-swap="innerHTML"
+                hx-vals='{"shipIdx":"` + fmt.Sprint(shipIdx) + `"}'>
+              </div>
+            </div>`,
+		))
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	http.HandleFunc("/extract-cooldown-decrement", func(w http.ResponseWriter, r *http.Request) {
+		shipIdx, err := strconv.Atoi(r.URL.Query().Get("shipIdx"))
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		extractCooldowns[shipIdx] -= 2
+		if extractCooldowns[shipIdx] <= 0 {
+			w.Header().Add("HX-Trigger", "extract-end-cooldown")
+			extractCooldowns[shipIdx] = 0
+		}
+
+		_, err = w.Write([]byte(
+			"<p>" + fmt.Sprint(extractCooldowns[shipIdx]) + "s</p>",
+		))
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	http.HandleFunc("/extract-new-button", func(w http.ResponseWriter, r *http.Request) {
+		shipName := r.URL.Query().Get("ship")
+		_, err := w.Write([]byte(`<button
+            hx-get="/extract"
+            hx-swap="outerHTML"
+            hx-target="this"
+            hx-vals='{"ship":"` + shipName + `"}'>
+            Extract</button>`,
 		))
 		if err != nil {
 			log.Fatal(err)

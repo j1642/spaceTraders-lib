@@ -112,7 +112,14 @@
                     {{- range .Mounts }}
                         {{- if eq "MOUNT_MINING_LASER_II" .Symbol -}}
                             <!--TODO: generalize by using a funcMap func to remove the numeral suffix-->
-                            <td>Mine</td>
+                            <td id="td-extract-{{$idx}}">
+                                <button
+                                hx-get="/extract"
+                                hx-swap="outerHTML"
+                                hx-target="this"
+                                hx-vals='{"ship":"{{- $ship.Symbol -}}"}'>
+                                Extract</button>
+                            </td>
                             {{- $foundMiningLaser = true -}}
                             {{- break -}}
                         {{- end -}}
