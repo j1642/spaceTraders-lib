@@ -257,7 +257,7 @@ type OneIndentedField struct {
 	Capacity       int            `json:"capacity,omitempty"`
 	Current        int            `json:"current,omitempty"`
 	Speed          int            `json:"speed,omitempty"`
-	Condition      int            `json:"condition,omitempty"`
+	Condition      float64        `json:"condition,omitempty"`
 	PowerOutput    int            `json:"powerOutput,omitempty"`
 	ModuleSlots    int            `json:"moduleSlots,omitempty"`
 	MountingPoints int            `json:"mountingPoints,omitempty"`
