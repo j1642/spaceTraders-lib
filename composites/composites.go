@@ -84,7 +84,7 @@ func build_adj_matrix(locations []Point, markets []objects.Market) {
 	}
 }
 
-func investigateMarkets(system string, ticker *time.Ticker) ([]Point, []objects.Market) {
+func InvestigateMarkets(system string, ticker *time.Ticker) ([]Point, []objects.Market) {
 	sites_of_interest := []string{"PLANET", "MOON", "ORBITAL_STATION"}
 	//sites_of_interest := []string{"ORBITAL_STATION"}
 	real_stdout := os.Stdout
@@ -123,6 +123,14 @@ func investigateMarkets(system string, ticker *time.Ticker) ([]Point, []objects.
 	os.Stdout = real_stdout
 	for i, market := range markets {
 		fmt.Println(locations[i], market.Symbol)
+		for _, importGood := range market.Imports {
+			fmt.Print(importGood.Symbol, ", ")
+		}
+		fmt.Println("x")
+		for _, exchanged := range market.Exchange {
+			fmt.Print(exchanged.Symbol, ", ")
+		}
+		fmt.Println("x")
 	}
 
 	return locations, markets
