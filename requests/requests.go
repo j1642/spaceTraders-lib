@@ -150,7 +150,7 @@ func BuyCargo(ship, item string, amount int, ticker *time.Ticker) {
 	fmt.Println(body)
 }
 
-func SellCargo(ship, item string, amount int, ticker *time.Ticker) {
+func SellCargo(ship, item string, amount int, ticker *time.Ticker) objects.DataBuySell {
 	// Set amount to -1 to sell all of the item.
 	if amount == -1 {
 		inventory := DescribeShip(ship, ticker).Ship.Cargo.Inventory
@@ -177,10 +177,13 @@ func SellCargo(ship, item string, amount int, ticker *time.Ticker) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(ship, "selling...", amount, item, "at",
+	fmt.Println(ship, "sold", amount, item, "at",
 		sale.BuySell.Transaction.PricePerUnit, "for",
 		sale.BuySell.Transaction.TotalPrice,
-		"credits:", sale.BuySell.Agent.Credits)
+		"credits:", sale.BuySell.Agent.Credits,
+	)
+
+	return sale
 }
 
 func DescribeShip(ship string, ticker *time.Ticker) objects.ShipData {
@@ -195,12 +198,13 @@ func DescribeShip(ship string, ticker *time.Ticker) objects.ShipData {
 	var data objects.ShipData
 	err := json.Unmarshal(body.Bytes(), &data)
 	if err != nil {
-		panic(err)
+		fmt.Println("body:", string(body.Bytes()))
+		log.Fatal(err)
 	}
 	return data
 }
 
-// To view all contracts, enter "" as ID
+// To view all contracts, enter "" as the ID argument
 func ViewContract(id string, ticker *time.Ticker) *bytes.Buffer {
 	url := strings.Join([]string{"https://api.spacetraders.io/v2/my/contracts/", id}, "")
 	req := makeRequest("GET", url, nil)

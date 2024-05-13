@@ -4,7 +4,6 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	//"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -21,8 +20,6 @@ import (
 )
 
 var agentName string = getAgentName()
-
-var progressBarPercent int
 
 type dashboardData struct {
 	Ships []objects.Ship
@@ -554,6 +551,82 @@ func runServer(ticker *time.Ticker, data dashboardData) {
             hx-target="this"
             hx-vals='{"ship":"` + shipName + `"}'>
             Extract</button>`,
+		))
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	temSell := template.Must(template.New("sell.gohtml").ParseFiles("gohtml/sell.gohtml"))
+	http.HandleFunc("/sell", func(w http.ResponseWriter, r *http.Request) {
+		shipName := r.URL.Query().Get("ship")
+		// Isolate ship of interest
+		shipIdx := -1
+		for i, ship := range data.Ships {
+			if ship.Symbol == shipName {
+				shipIdx = i
+				break
+			}
+		}
+
+		sellInfo := struct {
+			Ship    objects.Ship
+			ShipIdx int
+		}{
+			Ship:    data.Ships[shipIdx],
+			ShipIdx: shipIdx,
+		}
+
+		err := temSell.Execute(w, sellInfo)
+		if err != nil {
+			log.Fatal(err)
+		}
+	})
+
+	http.HandleFunc("/sell-execute", func(w http.ResponseWriter, r *http.Request) {
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal(err)
+		}
+		var shipName string
+		var sellItem string
+		var sellAmount int
+		requestData := strings.Split(string(body), "&")
+		for i := range requestData {
+			attrValue := strings.Split(requestData[i], "=")
+			if attrValue[0] == "ship" {
+				shipName = attrValue[1]
+			} else if attrValue[0] == "sell-cargo-type" {
+				sellItem = attrValue[1]
+			} else if attrValue[0] == "sell-amount" {
+				sellAmount, err = strconv.Atoi(attrValue[1])
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+
+		shipIdx := -1
+		for i, ship := range data.Ships {
+			if ship.Symbol == shipName {
+				shipIdx = i
+				break
+			}
+		}
+
+		saleResult := requests.SellCargo(shipName, sellItem, sellAmount, ticker)
+		data.Ships[shipIdx].Cargo = saleResult.BuySell.Cargo
+
+		// New sell button
+		_, err = w.Write([]byte(
+			`<td id="td-sell-` + fmt.Sprint(shipIdx) + `">
+                <button
+                hx-get="/sell"
+                hx-swap="outerHTML"
+                hx-target="this"
+                hx-vals='{"ship":"` + shipName + `"}'>
+                Sell</button>
+            </td>`,
 		))
 		if err != nil {
 			log.Fatal(err)

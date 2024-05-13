@@ -106,7 +106,7 @@
                     </td>
                 {{- end -}}
             </tr>
-            <tr><th>Actions</th>
+            <tr><th>Extract</th>
                 {{- range $idx, $ship := .Ships -}}
                     {{- $foundMiningLaser := false -}}
                     {{- range .Mounts }}
@@ -123,6 +123,20 @@
                             {{- $foundMiningLaser = true -}}
                             {{- break -}}
                         {{- end -}}
+                    {{- end -}}
+                {{- end -}}
+            </tr>
+            <tr><th>Sell Cargo</th> <!--TODO: add buy/sell <select> menu in server.go-->
+                {{- range $idx, $ship := .Ships -}}
+                    {{- if gt $ship.Cargo.Capacity 0 -}}
+                        <td id="td-sell-{{$idx}}">
+                            <button
+                            hx-get="/sell"
+                            hx-swap="outerHTML"
+                            hx-target="this"
+                            hx-vals='{"ship":"{{- $ship.Symbol -}}"}'>
+                            Sell</button>
+                        </td>
                     {{- end -}}
                 {{- end -}}
             </tr>
