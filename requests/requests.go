@@ -219,8 +219,9 @@ func ViewServerStatus(ticker *time.Ticker) {
 }
 
 func ViewMarket(waypoint string, ticker *time.Ticker) *bytes.Buffer {
+	system := strings.Join(strings.Split(waypoint, "-")[:2], "-")
 	urlPieces := []string{"https://api.spacetraders.io/v2/systems/",
-		waypoint[:7], "/waypoints/", waypoint, "/market"}
+		system, "/waypoints/", waypoint, "/market"}
 	url := strings.Join(urlPieces, "")
 
 	req := makeRequest("GET", url, nil)
