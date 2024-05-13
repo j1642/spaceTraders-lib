@@ -267,6 +267,26 @@ func ExtractOre(ship string, ticker *time.Ticker) objects.ExtractionData {
 	// Error code 4236: shipNotInOrbitError
 }
 
+func SiphonGas(ship string, ticker *time.Ticker) objects.ExtractionData {
+	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/siphon"}
+	url := strings.Join(urlPieces, "")
+	req := makeRequest("POST", url, nil)
+
+	resp := sendRequest(req, ticker)
+	body := readResponse(resp)
+	fmt.Println(body)
+	fmt.Println("x")
+	siphonMsg := objects.ExtractionData{}
+	err := json.Unmarshal(body.Bytes(), &siphonMsg)
+	if err != nil {
+		panic(err)
+	}
+
+	return siphonMsg
+	// Error code 4000: cooldownConflictError
+	// Error code 4236: shipNotInOrbitError
+}
+
 func Orbit(ship string, ticker *time.Ticker) {
 	urlPieces := []string{"https://api.spacetraders.io/v2/my/ships/", ship, "/orbit"}
 	url := strings.Join(urlPieces, "")

@@ -104,7 +104,8 @@ type ExtractionData struct {
 	ErrBody     ErrBody     `json:"error,omitempty"`
 }
 type ExtractBody struct {
-	Extraction Extraction `json:"extraction"`
+	Extraction Extraction `json:"extraction,omitempty"`
+	Siphon     Extraction `json:"siphon,omitempty"`
 	Cooldown   Cooldown   `json:"cooldown"`
 	Cargo      Cargo      `json:"cargo"`
 }
