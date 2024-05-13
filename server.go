@@ -392,8 +392,9 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		// Log trip
 		_, arrival, _ := strings.Cut(travelMsg.Travel.Nav.Route.Arrival, "T")
 		arrival, _, _ = strings.Cut(arrival, ".")
-		log.Printf("%s travels to %s (%s), arriving %s\n",
+		log.Printf("%s travels to %s (%s), arriving %s. Fuel %d/%d\n",
 			shipName, destID, travelMsg.Travel.Nav.Route.Destination.Type, arrival,
+			travelMsg.Travel.Fuel.Current, travelMsg.Travel.Fuel.Capacity,
 		)
 
 		// Update root data, displays when the page is refreshed
