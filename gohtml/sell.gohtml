@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<body>
+    {{- if eq .Ship.Nav.Status "DOCKED" -}}
+        <p>Selling cargo</p>
+    {{- else -}}
+        <p><strong>Dock before selling cargo</strong></p>
+    {{- end -}}
+
+    <form hx-put="/sell-execute" hx-target="#td-sell-{{.ShipIdx}}" hx-swap="outerHTML">
+        <input type="hidden" name="ship" value="{{.Ship.Symbol}}"/>
+        <label>Cargo Type</label>
+        <select name="sell-cargo-type">
+            {{- range .Ship.Cargo.Inventory -}}
+                <option value="{{.Symbol}}">{{.Name}}</option>
+            {{ end -}}
+        </select>
+
+        <input type="text" name="sell-amount" placeholder="Enter the amount to sell">
+        <button>Submit</button>
+    </form>
+
+    <p>Current inventory</p>
+    <ul>
+        {{- range .Ship.Cargo.Inventory -}}
+        <li>{{.Units}} {{.Name}}</li>
+        {{- end -}}
+    </ul>
+
+
+</body>
