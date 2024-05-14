@@ -134,6 +134,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 
 		// TODO - finish map
 		// TODO: account overlapping sites, like moons with same coords
+		//   - orbital station do not appear on the map b/c of this
 		divisor := 10
 		systemInfo := mapInfo{Divisor: divisor, MaxY: maxY / divisor, MinX: minX / divisor, XRange: make([]bool, (maxX-minX+1)/divisor), YRange: make([]bool, (maxY-minY+1)/divisor), System: system, Waypoints: waypoints}
 		//systemInfo := mapInfo{Divisor: divisor, MaxY: maxY / divisor, MinX: minX / divisor, XRange: make([]bool, (maxX+1)/divisor), YRange: make([]bool, (maxY+1)/divisor), System: system, Waypoints: waypoints}

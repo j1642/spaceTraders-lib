@@ -63,6 +63,9 @@ table {
 .GAS_GIANT-cell {
     background-color: red;
 }
+.ORBITAL_STATION-cell{
+    background-color: black;
+}
 .map-width {
     width: 0.12em;
 }
