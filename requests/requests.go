@@ -274,8 +274,6 @@ func SiphonGas(ship string, ticker *time.Ticker) objects.ExtractionData {
 
 	resp := sendRequest(req, ticker)
 	body := readResponse(resp)
-	fmt.Println(body)
-	fmt.Println("x")
 	siphonMsg := objects.ExtractionData{}
 	err := json.Unmarshal(body.Bytes(), &siphonMsg)
 	if err != nil {
@@ -283,8 +281,6 @@ func SiphonGas(ship string, ticker *time.Ticker) objects.ExtractionData {
 	}
 
 	return siphonMsg
-	// Error code 4000: cooldownConflictError
-	// Error code 4236: shipNotInOrbitError
 }
 
 func Orbit(ship string, ticker *time.Ticker) {
