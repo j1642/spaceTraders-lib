@@ -634,6 +634,22 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		}
 	})
 
+	http.HandleFunc("/siphon", func(w http.ResponseWriter, r *http.Request) {
+		shipName := r.URL.Query().Get("ship")
+		if shipName == "" {
+			log.Println("siphon error: empty shipName")
+			return
+		}
+
+		siphonMsg := requests.SiphonGas(shipName, ticker)
+		log.Printf("%s siphoned %d %s, cargo %d/%d\n", shipName,
+			siphonMsg.ExtractBody.Siphon.Yield.Units,
+			siphonMsg.ExtractBody.Siphon.Yield.Item,
+			siphonMsg.ExtractBody.Cargo.Units,
+			siphonMsg.ExtractBody.Cargo.Capacity,
+		)
+	})
+
 	fmt.Println("Server listening on 8080")
 	http.ListenAndServe(":8080", nil)
 }

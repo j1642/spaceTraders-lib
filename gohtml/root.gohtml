@@ -108,7 +108,6 @@
             </tr>
             <tr><th>Extract</th>
                 {{- range $idx, $ship := .Ships -}}
-                    {{- $foundMiningLaser := false -}}
                     {{- range .Mounts }}
                         {{- if eq "MOUNT_MINING_LASER_II" .Symbol -}}
                             <!--TODO: generalize by using a funcMap func to remove the numeral suffix-->
@@ -120,7 +119,25 @@
                                 hx-vals='{"ship":"{{- $ship.Symbol -}}"}'>
                                 Extract</button>
                             </td>
-                            {{- $foundMiningLaser = true -}}
+                            {{- break -}}
+                        {{- end -}}
+                    {{- end -}}
+                {{- end -}}
+            </tr>
+            <tr><th>Siphon</th>
+                {{- range $idx, $ship := .Ships -}}
+                    {{- range .Mounts -}}
+                        {{- if eq "MOUNT_GAS_SIPHON_II" .Symbol -}}
+                            <!--TODO: generalize by using a funcMap func to remove the numeral suffix-->
+                            <td id="td-siphon-{{$idx}}">
+                                <button
+                                hx-get="/siphon"
+                                hx-swap="none"
+                                hx-vals='{"ship":"{{- $ship.Symbol -}}"}'>
+                                <!--hx-swap="outerHTML"   TODO: siphon cooldown timer
+                                    hx-target="this"-->
+                                Siphon</button>
+                            </td>
                             {{- break -}}
                         {{- end -}}
                     {{- end -}}
