@@ -98,8 +98,7 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 	}
 	temMap := template.Must(template.New("map.gohtml").Funcs(funcMaps).ParseFiles("gohtml/map.gohtml"))
 	http.HandleFunc("/map", func(w http.ResponseWriter, r *http.Request) {
-		// TODO: add system choice instead of hardcoding
-		system := "X1-V57"
+		system := data.Ships[0].Nav.SystemSymbol
 		contents, err := os.ReadFile(fmt.Sprintf("maps/%s.json", system))
 		if err != nil {
 			composites.StoreSystemWaypoints(system, ticker)
