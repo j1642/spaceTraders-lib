@@ -616,7 +616,11 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 		}
 
 		saleResult := requests.SellCargo(shipName, sellItem, sellAmount, ticker)
-		data.Ships[shipIdx].Cargo = saleResult.BuySell.Cargo
+		// Check that the sale actually happened and saleResult is not empty
+		if saleResult.BuySell.Transaction.TotalPrice != 0 {
+			data.Ships[shipIdx].Cargo = saleResult.BuySell.Cargo
+			data.Agent.Credits = saleResult.BuySell.Agent.Credits
+		}
 
 		// New sell button
 		_, err = w.Write([]byte(
@@ -648,6 +652,17 @@ func runServer(ticker *time.Ticker, data dashboardData) {
 			siphonMsg.ExtractBody.Cargo.Units,
 			siphonMsg.ExtractBody.Cargo.Capacity,
 		)
+
+		shipIdx := -1
+		for i, ship := range data.Ships {
+			if ship.Symbol == shipName {
+				shipIdx = i
+				break
+			}
+		}
+		if siphonMsg.ExtractBody.Siphon.Yield.Units != 0 {
+			data.Ships[shipIdx].Cargo = siphonMsg.ExtractBody.Cargo
+		}
 	})
 
 	fmt.Println("Server listening on 8080")
