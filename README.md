@@ -5,5 +5,7 @@ To use, run `go run server.go` and enter the URL `localhost:8080` in your browse
 HTMX is required and is not included in the repo at the moment.
 
 composites/ - concurrent ship management functions using the API responses
+
 objects/ - structs for unmarshalling the API JSON responses
+
 requests/ - HTTP requests for the API endpoints
